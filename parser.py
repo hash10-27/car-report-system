@@ -67,6 +67,15 @@ def extract_pattern(text, pattern):
     match = re.search(pattern, text)
     return match.group(1).strip() if match else ""
 
+# ================================
+# 🔹 أدوات مساعدة
+# ================================
+
+def fix_reverse(text):
+    if not text:
+        return text
+    return text[::-1]
+
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -202,12 +211,13 @@ def parse(text):
         elif "الصانع" in clean:
             make = re.search(r'[A-Z]+', line)
             if make:
-                data["car_info"]["make"] = make.group()
+                data["car_info"]["make"] = fix_reverse(make.group())
 
         elif "الطراز" in clean:
             words = re.findall(r'[A-Za-z]+', line)
             if words:
-                data["car_info"]["model"] = " ".join(words)
+                model = " ".join(words)
+                data["car_info"]["model"] = fix_reverse(model)
 
         elif "تعريف" in clean:
             vin = re.search(r'[A-Z0-9]{17}', line)
