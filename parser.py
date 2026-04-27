@@ -147,7 +147,15 @@ def parse(text):
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
-        print("LINE>>", repr(line))
+        # 🔥 قلب السطر إذا عربي
+        if any('\u0600' <= c <= '\u06FF' for c in line):
+            line = line[::-1]
+
+        # 🔥 إصلاح الأرقام (ترجع 4102 → 2014)
+        import re
+        numbers = re.findall(r'\d+', line)
+        for num in numbers:
+            line = line.replace(num, num[::-1])
 
         if not line:
             continue
@@ -402,6 +410,6 @@ def parse(text):
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
 
-            print("FINAL DATA >>>", data)
+        print("FINAL DATA >>>", data)
 
     return data
