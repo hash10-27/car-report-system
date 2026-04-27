@@ -82,21 +82,11 @@ def fix_vin(v):
 
     v = v.strip().replace(" ", "")
 
-    # لازم يكون VIN = 17
-    if len(v) != 17:
-        return v
+    # إذا يبدأ برقم كبير → غالباً مقلوب
+    if v[0].isdigit():
+        return v[::-1]
 
-    # نقسم:
-    # أول 11 خانة غالباً ثابتة (حروف + أرقام)
-    # آخر 6 أرقام هي اللي تنعكس في PDF
-    prefix = v[:11]
-    suffix = v[11:]
-
-    # إذا الجزء الأخير أرقام → نعكسه فقط
-    if suffix.isdigit():
-        suffix = suffix[::-1]
-
-    return prefix + suffix
+    return v
 def fix_engine(e):
     if not e:
         return e
