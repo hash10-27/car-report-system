@@ -275,8 +275,6 @@ def parse(text):
             if vin:
                 data["car_info"]["vin"] = fix_vin(vin.group())
 
-        elif "حجمالمحرك" in clean:
-
             elif "حجمالمحرك" in clean:
 
                 matches = re.findall(r'[A-Z0-9\.\+\-L]+', line)
