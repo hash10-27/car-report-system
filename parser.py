@@ -76,20 +76,27 @@ def fix_reverse(text):
         return text
     return text[::-1]
 
+import re
+
 def fix_vin(v):
     if not v:
         return v
 
-    v = v.strip().replace(" ", "")
+    v = v.strip()
 
-    # إذا الطول 17 نحاول نصلحه
-    if len(v) == 17:
-        # جرّب العكس
-        rev = v[::-1]
+    # تقسيم VIN إلى:
+    # بداية (حروف + أرقام مختلطة)
+    # نهاية (أرقام فقط)
+    match = re.match(r'([A-Z0-9]+?)(\d+)$', v)
 
-        # إذا العكس يبدأ بشكل منطقي
-        if rev[0] in "123456789JHKLNW":
-            return rev
+    if match:
+        prefix = match.group(1)
+        numbers = match.group(2)
+
+        # نعكس الأرقام فقط
+        numbers = numbers[::-1]
+
+        return prefix + numbers
 
     return v
 
@@ -270,26 +277,21 @@ def parse(text):
 
         elif "حجمالمحرك" in clean:
 
-            # الحجم مثل 2.5L أو 3.0L
-            size = re.search(r'\d\.\d\s*L', line)
+            elif "حجمالمحرك" in clean:
 
-            # كود المحرك مثل 2AR-FXE+2JM
-            code = re.search(r'[A-Z0-9]{2,}-[A-Z0-9]{2,}\+[A-Z0-9]{2,}', line)
+                matches = re.findall(r'[A-Z0-9\.\+\-L]+', line)
 
-            parts = []
+                parts = []
 
-            if size:
-                parts.append(size.group().replace(" ", ""))  # إزالة الفراغ
+                for m in matches:
+                    # نأخذ الأشياء المفيدة فقط
+                    if "L" in m or "-" in m:
+                        parts.append(m)
 
-            if code:
-                parts.append(code.group())
-
-            engine = " ".join(parts)
-
-            data["car_info"]["engine"] = engine
+                data["car_info"]["engine"] = " ".join(parts)
 
         elif "عداد" in clean:
-            km = re.search(r'\d+\.\d+|\d+', line)
+            km = re.search(r'\d{4,}\.\d{2}', line)
             if km:
                 data["car_info"]["mileage"] = fix_mileage(km.group())
 
