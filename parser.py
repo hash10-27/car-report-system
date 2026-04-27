@@ -82,17 +82,21 @@ def fix_vin(v):
 
     v = v.strip().replace(" ", "")
 
-    # إذا الطول 17 نحاول نصلحه
-    if len(v) == 17:
-        # جرّب العكس
-        rev = v[::-1]
+    # لازم يكون VIN = 17
+    if len(v) != 17:
+        return v
 
-        # إذا العكس يبدأ بشكل منطقي
-        if rev[0] in "123456789JHKLNW":
-            return rev
+    # نقسم:
+    # أول 11 خانة غالباً ثابتة (حروف + أرقام)
+    # آخر 6 أرقام هي اللي تنعكس في PDF
+    prefix = v[:11]
+    suffix = v[11:]
 
-    return v
+    # إذا الجزء الأخير أرقام → نعكسه فقط
+    if suffix.isdigit():
+        suffix = suffix[::-1]
 
+    return prefix + suffix
 def fix_engine(e):
     if not e:
         return e
@@ -288,16 +292,12 @@ def parse(text):
 
         elif "عداد" in clean:
 
-            match = re.search(r'(\d+\.\d+)', line)
+            numbers = re.findall(r'\d+', line)
 
-            if match:
-                value = match.group()
+            if numbers:
+                # نأخذ أطول رقم (غالباً هو الصحيح)
+                value = max(numbers, key=len)
 
-                # إذا مقلوب
-                if value.startswith("00"):
-                    value = value[::-1]
-
-                value = value.replace(".00", "").replace(".", "")
                 data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
