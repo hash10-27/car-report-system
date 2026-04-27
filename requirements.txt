@@ -2,7 +2,7 @@ flask
 pdfplumber
 python-docx
 arabic-reshaper
-python-bidi
+python-bidi==0.4.2
 Pillow
 pytesseract
 pdf2image
