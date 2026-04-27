@@ -76,6 +76,39 @@ def fix_reverse(text):
         return text
     return text[::-1]
 
+def fix_vin(v):
+    if not v:
+        return v
+    
+    v = v.replace(" ", "")
+    
+    # إذا واضح أنه مقلوب (بداية VIN غالباً أرقام/حروف معروفة)
+    if not v.startswith(("1", "2", "3", "J", "K", "L", "W")):
+        v = v[::-1]
+    
+    return v
+
+def fix_engine(e):
+    if not e:
+        return e
+    
+    # اقسم على +
+    parts = e.split("+")
+    
+    # اعكس كل جزء
+    parts = [p[::-1] for p in parts]
+    
+    # ارجع ترتيبها الصحيح
+    return "+".join(parts[::-1])
+
+def fix_mileage(m):
+    if not m:
+        return m
+    
+    m = m[::-1]          # عكس
+    m = m.replace(".", "")  # إزالة النقطة
+    
+    return m
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -222,7 +255,7 @@ def parse(text):
         elif "تعريف" in clean:
             vin = re.search(r'[A-Z0-9]{17}', line)
             if vin:
-                data["car_info"]["vin"] = vin.group()
+                data["car_info"]["vin"] = fix_vin(vin.group())
 
         elif "حجمالمحرك" in clean:
 
@@ -237,12 +270,13 @@ def parse(text):
             if code:
                 parts.append(code.group())
 
-            data["car_info"]["engine"] = " ".join(parts)
+            engine = " ".join(parts)
+            data["car_info"]["engine"] = fix_engine(engine)
 
         elif "عداد" in clean:
             km = re.search(r'\d+\.\d+|\d+', line)
             if km:
-                data["car_info"]["mileage"] = km.group()
+                data["car_info"]["mileage"] = fix_mileage(km.group())
 
         # 👤 العميل
         elif "اسمالعميل" in clean:
