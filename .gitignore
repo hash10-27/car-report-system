@@ -1,0 +1,7 @@
+.buildozer/
+__pycache__/
+*.pyc
+venv/
+uploads/
+outputs/
+*.log

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>تحويل التقارير</title>
+
+<style>
+
+<script>
+    function printFile() {
+        const link = document.querySelector('a[href^="/download"]');
+        if (!link) return;
+
+        const fileUrl = link.href;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = fileUrl;
+
+        document.body.appendChild(iframe);
+
+        iframe.onload = function() {
+            iframe.contentWindow.print();
+        };
+    }
+    </script>
+body {
+    font-family: Arial;
+    background: #1e1e2f;
+    color: white;
+    text-align: center;
+    padding: 40px;
+}
+
+.box {
+    background: #2e2e3f;
+    padding: 30px;
+    border-radius: 15px;
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 18px;
+    margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>📊 تحويل تقرير السيارة</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".pdf" required><br><br>
+        <button type="submit">⚙️ تحويل</button>
+    </form>
+
+    {% if file_ready %}
+        <br>
+        <a href="/download/{{file_ready}}">
+            <button>⬇️ تحميل التقرير</button>
+        </a>
+
+        <button onclick="printFile()">🖨️ طباعة</button>
+    {% endif %}
+</div>
+
+</body>
+</html>
