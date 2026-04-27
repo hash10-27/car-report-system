@@ -270,15 +270,13 @@ def parse(text):
 
         elif "حجمالمحرك" in clean:
 
-            matches = re.findall(r'[A-Z0-9\.\+\-]+', line)
+            # تنظيف النص من الرموز الغريبة
+            clean_engine = re.sub(r'[^\w\.\+\-\s]', '', line)
 
-            parts = []
+            # استخراج كل الأجزاء المهمة
+            parts = re.findall(r'[A-Z0-9\.\+\-]+', clean_engine)
 
-            for m in matches:
-                # نختار فقط القيم المهمة
-                if "L" in m or "-" in m:
-                    parts.append(m)
-
+            # دمجهم بالترتيب الصحيح
             if parts:
                 data["car_info"]["engine"] = " ".join(parts)
 
@@ -288,7 +286,7 @@ def parse(text):
 
             if numbers:
                 # نأخذ أطول رقم (غالباً هو الصحيح)
-                value = max(numbers, key=len)
+                value = km.group().replace(".00", "")
 
                 data["car_info"]["mileage"] = value
         # 👤 العميل
