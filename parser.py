@@ -75,6 +75,7 @@ def extract_pattern(text, pattern):
 def parse(text):
 
     # 🔥 إصلاح النص المقلوب (مهم جداً)
+    lines = text.split("\n")
 
     import re
 
