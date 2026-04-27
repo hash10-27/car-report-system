@@ -7,17 +7,22 @@ import re
 
 # 🔹 استبدال النص داخل الفقرات والجداول
 def replace_all(doc, key, value):
+
+    def replace_in_paragraph(paragraph):
+        for run in paragraph.runs:
+            if key in run.text:
+                run.text = run.text.replace(key, value)
+
     # الفقرات
     for p in doc.paragraphs:
-        if key in p.text:
-            p.text = p.text.replace(key, value)
+        replace_in_paragraph(p)
 
     # الجداول
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                if key in cell.text:
-                    cell.text = cell.text.replace(key, value)
+                for p in cell.paragraphs:
+                    replace_in_paragraph(p)
 
 def build_dtc_text(dtc_list):
     if not dtc_list:
@@ -247,5 +252,5 @@ def fill_template(template_path, output_path, data):
             vAlign = OxmlElement('w:vAlign')
             vAlign.set(qn('w:val'), 'center')
             tcPr.append(vAlign)
-
+    print("REPLACEMENTS >>>", replacements)
     doc.save(output_path)
