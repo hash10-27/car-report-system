@@ -76,27 +76,36 @@ def fix_reverse(text):
         return text
     return text[::-1]
 
-def fix_vin_numbers(v):
+def fix_vin_full(v):
     if not v:
         return v
 
     v = v.strip().replace(" ", "")
 
-    # استخراج الأرقام فقط
+    # عكس الأرقام
     digits = [c for c in v if c.isdigit()]
     digits.reverse()
 
+    # عكس الأحرف
+    letters = [c for c in v if c.isalpha()]
+    letters.reverse()
+
     result = []
-    digit_index = 0
+    di = 0
+    li = 0
 
     for c in v:
         if c.isdigit():
-            result.append(digits[digit_index])
-            digit_index += 1
+            result.append(digits[di])
+            di += 1
+        elif c.isalpha():
+            result.append(letters[li])
+            li += 1
         else:
             result.append(c)
 
     return "".join(result)
+
 def fix_engine(e):
     if not e:
         return e
@@ -270,7 +279,7 @@ def parse(text):
         elif "تعريف" in clean:
             vin = re.search(r'[A-Z0-9]{17}', line)
             if vin:
-                data["car_info"]["vin"] = fix_vin_numbers(vin.group())
+                data["car_info"]["vin"] = fix_vin_full(vin.group())
 
         elif "حجمالمحرك" in clean:
 
