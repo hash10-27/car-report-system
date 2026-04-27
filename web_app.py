@@ -12,6 +12,7 @@ def fix_full_text(text):
     fixed_lines = []
 
     for line in lines:
+        line = line[::-1]
         # إذا فيه حروف عربية → اقلب السطر
         if any('\u0600' <= c <= '\u06FF' for c in line):
             line = line[::-1]
