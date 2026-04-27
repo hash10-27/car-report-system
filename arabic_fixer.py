@@ -1,5 +1,3 @@
-# arabic_fixer.py
-
 try:
     import arabic_reshaper
     from bidi.algorithm import get_display
@@ -8,7 +6,6 @@ try:
         reshaped = arabic_reshaper.reshape(text)
         return get_display(reshaped)
 
-except ImportError:
-    # 🔥 fallback إذا المكتبات غير موجودة (مثل Render)
+except:
     def normalize_arabic(text):
         return text

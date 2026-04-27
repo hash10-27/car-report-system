@@ -166,7 +166,7 @@ def fill_system_tables(doc, systems_data):
 
         table = tables[i + 1]
 
-        dtcs = systems_data[system_name]
+        dtcs = systems_data.get(system_name, [])
 
         for idx, d in enumerate(dtcs):
             row = table.add_row().cells

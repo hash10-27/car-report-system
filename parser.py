@@ -252,10 +252,19 @@ def parse(text):
         # 🔥 اكتشاف النظام بشكل قوي
         if "HC" in clean_line:
             current_system = "HC"
-        elif "ABS" in clean_line or "VSC" in clean_line or "TRAC" in clean_line:
+
+        elif "ABS" in clean_line:
             current_system = "ABS / VSC / TRAC"
+
+        elif "VSC" in clean_line:
+            current_system = "VSC"
+
+        elif "TRAC" in clean_line:
+            current_system = "TRAC"
+
         elif "SRS" in clean_line:
             current_system = "SRS"
+
         elif "CM" in clean_line:
             current_system = "CM"
 
