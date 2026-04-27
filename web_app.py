@@ -2,10 +2,23 @@ from flask import Flask, render_template, request, send_file
 import os
 
 from extractor import extract_text
-from cleaner import fix_arabic
+#from cleaner import fix_arabic
 from parser import parse
 from writer import fill_template
-from arabic_fixer import normalize_arabic
+#from arabic_fixer import normalize_arabic
+
+def fix_full_text(text):
+    lines = text.split("\n")
+    fixed_lines = []
+
+    for line in lines:
+        # إذا فيه حروف عربية → اقلب السطر
+        if any('\u0600' <= c <= '\u06FF' for c in line):
+            line = line[::-1]
+
+        fixed_lines.append(line)
+
+    return "\n".join(fixed_lines)
 
 app = Flask(__name__)
 
@@ -44,10 +57,11 @@ def index():
 
             # 🔥 نفس منطقك بدون تغيير
             text = extract_text(pdf_path)
-            #text = normalize_arabic(text)
-            fixed_text = fix_arabic(text)
-            data = parse(fixed_text)
 
+            # 🔥 إصلاح اتجاه النص (هنا الحل الحقيقي)
+            text = fix_full_text(text)
+
+            data = parse(text)
             output_docx = get_next_filename()
             fill_template(TEMPLATE_PATH, output_docx, data)
 
