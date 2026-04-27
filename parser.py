@@ -74,9 +74,17 @@ def extract_pattern(text, pattern):
 # ================================
 def parse(text):
 
-    import re
+    # 🔥 إصلاح النص المقلوب (مهم جداً)
+    fixed_lines = []
+    for line in text.split("\n"):
+        # إذا السطر عربي → اقلبه
+        if any('\u0600' <= c <= '\u06FF' for c in line):
+            line = line[::-1]
+        fixed_lines.append(line)
 
-    lines = text.split("\n")
+    lines = fixed_lines
+
+    import re
 
     data = {
         "car_info": {
