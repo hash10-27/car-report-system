@@ -13,7 +13,7 @@ def clean_name(text):
 
 def fix_arabic_order(text):
     words = text.split()
-    
+
     return " ".join(words)
 
 def fix_engine_format(text):
@@ -72,7 +72,8 @@ def extract_pattern(text, pattern):
 # 🔥 الدالة الرئيسية
 # ================================
 def parse(text):
-
+    
+    lines = []
     for line in text.split("\n"):
         line = normalize_line(line)
 
