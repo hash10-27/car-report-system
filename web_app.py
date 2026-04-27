@@ -11,13 +11,7 @@ def fix_full_text(text):
     lines = text.split("\n")
     fixed_lines = []
 
-    for line in lines:
-        # إذا فيه حروف عربية → اقلب السطر
-        if any('\u0600' <= c <= '\u06FF' for c in line):
-            line = line[::-1]
-
-        fixed_lines.append(line)
-
+   
     return "\n".join(fixed_lines)
 
 app = Flask(__name__)

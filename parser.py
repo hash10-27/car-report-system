@@ -13,8 +13,7 @@ def clean_name(text):
 
 def fix_arabic_order(text):
     words = text.split()
-    if any('\u0600' <= c <= '\u06FF' for c in text):
-        words = words[::-1]
+    
     return " ".join(words)
 
 def fix_engine_format(text):
@@ -74,8 +73,16 @@ def extract_pattern(text, pattern):
 # ================================
 def parse(text):
 
+    for line in text.split("\n"):
+        line = normalize_line(line)
+
+        # قلب مرة واحدة فقط
+        if any('\u0600' <= c <= '\u06FF' for c in line):
+            line = line[::-1]
+
+        lines.append(line)
+
     # 🔥 إصلاح النص المقلوب (مهم جداً)
-    lines = text.split("\n")
 
     import re
 
@@ -141,7 +148,7 @@ def parse(text):
     for i, line in enumerate(lines):
         line = normalize_line(line)
         # 🔥 قلب السطر إذا عربي
-        line = fix_arabic_order(line)
+        lines = text.split("\n")
 
         # 🔥 إصلاح الأرقام (ترجع 4102 → 2014)
         import re
