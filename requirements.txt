@@ -1,6 +1,5 @@
 flask
 pdfplumber
-python-bidi
 python-docx
 arabic-reshaper
 Pillow

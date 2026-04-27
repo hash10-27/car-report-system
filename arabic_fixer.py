@@ -1,12 +1,17 @@
-# arabic_fixer.py
-
 import arabic_reshaper
-from bidi.algorithm import get_display
+
+try:
+    from bidi.algorithm import get_display
+    BIDI_AVAILABLE = True
+except ImportError:
+    BIDI_AVAILABLE = False
 
 
 def normalize_arabic(text):
     try:
         reshaped = arabic_reshaper.reshape(text)
-        return get_display(reshaped)
+        if BIDI_AVAILABLE:
+            return get_display(reshaped)
+        return reshaped
     except:
         return text
