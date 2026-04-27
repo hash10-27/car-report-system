@@ -12,7 +12,6 @@ def fix_full_text(text):
     fixed_lines = []
 
     for line in lines:
-        line = line[::-1]
         # إذا فيه حروف عربية → اقلب السطر
         if any('\u0600' <= c <= '\u06FF' for c in line):
             line = line[::-1]
@@ -60,7 +59,7 @@ def index():
             text = extract_text(pdf_path)
 
             # 🔥 إصلاح اتجاه النص (هنا الحل الحقيقي)
-            text = fix_full_text(text)
+            #text = fix_full_text(text)
 
             data = parse(text)
             output_docx = get_next_filename()
