@@ -79,13 +79,18 @@ def fix_reverse(text):
 def fix_vin(v):
     if not v:
         return v
-    
-    v = v.replace(" ", "")
-    
-    # إذا واضح أنه مقلوب (بداية VIN غالباً أرقام/حروف معروفة)
-    if not v.startswith(("1", "2", "3", "J", "K", "L", "W")):
-        v = v[::-1]
-    
+
+    v = v.strip().replace(" ", "")
+
+    # إذا الطول 17 نحاول نصلحه
+    if len(v) == 17:
+        # جرّب العكس
+        rev = v[::-1]
+
+        # إذا العكس يبدأ بشكل منطقي
+        if rev[0] in "123456789JHKLNW":
+            return rev
+
     return v
 
 def fix_engine(e):
@@ -104,10 +109,16 @@ def fix_engine(e):
 def fix_mileage(m):
     if not m:
         return m
-    
-    m = m[::-1]          # عكس
-    m = m.replace(".", "")  # إزالة النقطة
-    
+
+    m = m[::-1]  # عكس
+
+    # إزالة الأصفار الزائدة من البداية
+    m = m.lstrip("0")
+
+    # إذا كان كله أرقام
+    if m.isdigit():
+        return m
+
     return m
 
 # ================================
@@ -259,19 +270,23 @@ def parse(text):
 
         elif "حجمالمحرك" in clean:
 
-            size = re.search(r'\d\.\dL', line)
-            code = re.search(r'[A-Z0-9\-+]{5,}', line)
+            # الحجم مثل 2.5L أو 3.0L
+            size = re.search(r'\d\.\d\s*L', line)
+
+            # كود المحرك مثل 2AR-FXE+2JM
+            code = re.search(r'[A-Z0-9]{2,}-[A-Z0-9]{2,}\+[A-Z0-9]{2,}', line)
 
             parts = []
 
             if size:
-                parts.append(size.group())
+                parts.append(size.group().replace(" ", ""))  # إزالة الفراغ
 
             if code:
                 parts.append(code.group())
 
             engine = " ".join(parts)
-            data["car_info"]["engine"] = fix_engine(engine)
+
+            data["car_info"]["engine"] = engine
 
         elif "عداد" in clean:
             km = re.search(r'\d+\.\d+|\d+', line)
