@@ -76,27 +76,20 @@ def fix_reverse(text):
         return text
     return text[::-1]
 
-import re
-
 def fix_vin(v):
     if not v:
         return v
 
-    v = v.strip()
+    v = v.strip().replace(" ", "")
 
-    # تقسيم VIN إلى:
-    # بداية (حروف + أرقام مختلطة)
-    # نهاية (أرقام فقط)
-    match = re.match(r'([A-Z0-9]+?)(\d+)$', v)
+    # إذا الطول 17 نحاول نصلحه
+    if len(v) == 17:
+        # جرّب العكس
+        rev = v[::-1]
 
-    if match:
-        prefix = match.group(1)
-        numbers = match.group(2)
-
-        # نعكس الأرقام فقط
-        numbers = numbers[::-1]
-
-        return prefix + numbers
+        # إذا العكس يبدأ بشكل منطقي
+        if rev[0] in "123456789JHKLNW":
+            return rev
 
     return v
 
@@ -275,24 +268,29 @@ def parse(text):
             if vin:
                 data["car_info"]["vin"] = fix_vin(vin.group())
 
-            elif "حجمالمحرك" in clean:
+        elif "حجمالمحرك" in clean:
 
-                matches = re.findall(r'[A-Z0-9\.\+\-L]+', line)
+            matches = re.findall(r'[A-Z0-9\.\+\-]+', line)
 
-                parts = []
+            parts = []
 
-                for m in matches:
-                    # نأخذ الأشياء المفيدة فقط
-                    if "L" in m or "-" in m:
-                        parts.append(m)
+            for m in matches:
+                # نختار فقط القيم المهمة
+                if "L" in m or "-" in m:
+                    parts.append(m)
 
+            if parts:
                 data["car_info"]["engine"] = " ".join(parts)
 
         elif "عداد" in clean:
-            km = re.search(r'\d{4,}\.\d{2}', line)
-            if km:
-                data["car_info"]["mileage"] = fix_mileage(km.group())
 
+            numbers = re.findall(r'\d+', line)
+
+            if numbers:
+                # نأخذ أطول رقم (غالباً هو الصحيح)
+                value = max(numbers, key=len)
+
+                data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
