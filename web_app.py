@@ -44,7 +44,7 @@ def index():
 
             # 🔥 نفس منطقك بدون تغيير
             text = extract_text(pdf_path)
-            text = normalize_arabic(text)
+            #text = normalize_arabic(text)
             fixed_text = fix_arabic(text)
             data = parse(fixed_text)
 

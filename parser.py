@@ -174,7 +174,8 @@ def parse(text):
 
             continue
 
-        clean = line.replace(" ", "")
+        clean = fix_arabic_order(line)
+        clean = clean.replace(" ", "")
          
         # 🚗 السيارة
         if "السنة" in clean:
@@ -392,5 +393,7 @@ def parse(text):
 
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
+
+            print("FINAL DATA >>>", data)
 
     return data
