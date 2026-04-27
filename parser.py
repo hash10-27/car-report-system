@@ -282,13 +282,20 @@ def parse(text):
 
         elif "عداد" in clean:
 
-            numbers = re.findall(r'\d+', line)
+            km = re.search(r'\d+\.\d{2}', line)
 
-            if numbers:
-                # نأخذ أطول رقم (غالباً هو الصحيح)
+            if km:
+                # نحذف .00 فقط
                 value = km.group().replace(".00", "")
-
                 data["car_info"]["mileage"] = value
+
+            else:
+                # fallback لو ما فيه فاصلة
+                numbers = re.findall(r'\d+', line)
+
+                if numbers:
+                    value = max(numbers, key=len)  # أطول رقم
+                    data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
