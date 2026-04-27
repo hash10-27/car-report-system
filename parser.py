@@ -76,36 +76,17 @@ def fix_reverse(text):
         return text
     return text[::-1]
 
-def fix_vin_full(v):
+def fix_vin(v):
     if not v:
         return v
 
     v = v.strip().replace(" ", "")
 
-    # عكس الأرقام
-    digits = [c for c in v if c.isdigit()]
-    digits.reverse()
+    # إذا يبدأ برقم كبير → غالباً مقلوب
+    if v[0].isdigit():
+        return v[::-1]
 
-    # عكس الأحرف
-    letters = [c for c in v if c.isalpha()]
-    letters.reverse()
-
-    result = []
-    di = 0
-    li = 0
-
-    for c in v:
-        if c.isdigit():
-            result.append(digits[di])
-            di += 1
-        elif c.isalpha():
-            result.append(letters[li])
-            li += 1
-        else:
-            result.append(c)
-
-    return "".join(result)
-
+    return v
 def fix_engine(e):
     if not e:
         return e
@@ -279,7 +260,7 @@ def parse(text):
         elif "تعريف" in clean:
             vin = re.search(r'[A-Z0-9]{17}', line)
             if vin:
-                data["car_info"]["vin"] = fix_vin_full(vin.group())
+                data["car_info"]["vin"] = fix_vin(vin.group())
 
         elif "حجمالمحرك" in clean:
 
@@ -332,8 +313,10 @@ def parse(text):
         elif "وقت الاختبار" in clean:
             data["meta"]["test_time"] = extract_from_line(line, ["وقت الاختبار"])
 
-        elif "SN" in clean:
-            data["meta"]["sn"] = extract_from_line(line, ["SN"])
+        elif "SN" in line and not data["meta"]["sn"]:
+            sn = re.search(r'\d{8,}', line)
+            if sn:
+                data["meta"]["sn"] = sn.group()
 
         # 🔥 اكتشاف اسم النظام من السطر
         system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
@@ -362,12 +345,13 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'([PBCU][0-9A-Z]{4}(?:\.\d+)?)', line)
+        dtc_match = re.search(r'([PBCU][0-9A-Z]{4})', line)
 
         if dtc_match:
             code = dtc_match.group(1)
             desc = line.split(code, 1)[-1].strip()
-            if not re.search(r'(الحالي|التاريخ|DTC)', line):
+
+            if len(desc) < 3:
                 continue
 
                 # 🔥 الفلتر هنا (داخل الشرط)
