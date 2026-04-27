@@ -293,19 +293,11 @@ def parse(text):
             if match:
                 value = match.group()
 
-                # إذا الرقم مقلوب مثل 00.57270
+                # إذا مقلوب
                 if value.startswith("00"):
                     value = value[::-1]
 
-                # الآن نضمن الشكل الصحيح 57270.00
-                if "." in value:
-                    left, right = value.split(".")
-
-                    # لو انعكس (صار 07275.00 مثلاً)
-                    if len(left) < len(right):
-                        value = (left + right)[::-1]
-                        value = value[:-2] + ".00"
-
+                value = value.replace(".00", "").replace(".", "")
                 data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
