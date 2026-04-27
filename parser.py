@@ -288,20 +288,25 @@ def parse(text):
 
         elif "عداد" in clean:
 
-            km = re.search(r'\d+\.\d{2}', line)
+            match = re.search(r'(\d+\.\d+)', line)
 
-            if km:
-                # نحذف .00 فقط
-                value = km.group().replace(".00", "")
+            if match:
+                value = match.group()
+
+                # إذا الرقم مقلوب مثل 00.57270
+                if value.startswith("00"):
+                    value = value[::-1]
+
+                # الآن نضمن الشكل الصحيح 57270.00
+                if "." in value:
+                    left, right = value.split(".")
+
+                    # لو انعكس (صار 07275.00 مثلاً)
+                    if len(left) < len(right):
+                        value = (left + right)[::-1]
+                        value = value[:-2] + ".00"
+
                 data["car_info"]["mileage"] = value
-
-            else:
-                # fallback لو ما فيه فاصلة
-                numbers = re.findall(r'\d+', line)
-
-                if numbers:
-                    value = max(numbers, key=len)  # أطول رقم
-                    data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
