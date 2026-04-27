@@ -270,15 +270,21 @@ def parse(text):
 
         elif "حجمالمحرك" in clean:
 
-            # تنظيف النص من الرموز الغريبة
             clean_engine = re.sub(r'[^\w\.\+\-\s]', '', line)
 
-            # استخراج كل الأجزاء المهمة
             parts = re.findall(r'[A-Z0-9\.\+\-]+', clean_engine)
 
-            # دمجهم بالترتيب الصحيح
-            if parts:
-                data["car_info"]["engine"] = " ".join(parts)
+            fixed_parts = []
+
+            for p in parts:
+                # إذا فيه حروف → غالباً معكوس → نقلبه
+                if re.search(r'[A-Z]', p):
+                    fixed_parts.append(p[::-1])
+                else:
+                    fixed_parts.append(p)
+
+            if fixed_parts:
+                data["car_info"]["engine"] = " ".join(sorted(fixed_parts, key=lambda x: (not 'L' in x, len(x))))
 
         elif "عداد" in clean:
 
