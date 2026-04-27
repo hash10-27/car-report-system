@@ -1,0 +1,9 @@
+flask
+pdfplumber
+python-docx
+arabic-reshaper
+python-bidi
+Pillow
+pytesseract
+pdf2image
+gunicorn
