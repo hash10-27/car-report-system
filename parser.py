@@ -391,7 +391,19 @@ def parse(text):
 
             code_match = re.search(r'[PBCU]\d{4}', line)
 
-            if code_match:
+            # 🔥 إذا ما لقى — جرب السطر مقلوب
+            if not code_match:
+                rev_line = line[::-1]
+                code_match = re.search(r'[PBCU]\d{4}', rev_line)
+
+                if code_match:
+                    code = code_match.group()[::-1]  # نرجعه للوضع الصحيح
+                else:
+                    code = None
+            else:
+                code = code_match.group()
+
+            if code:
                 code = code_match.group()
 
                 desc = line.replace(code, "").strip()
@@ -420,5 +432,7 @@ def parse(text):
                     "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
                 ]):
                     current_system = line.strip()
+        print("LINE >>>", line)
+        print("CODE >>>", code)
 
     return data
