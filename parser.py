@@ -349,7 +349,7 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'([0-9]\.[0-9A-Z]{4}[PBCU])', line)
+        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
 
         if dtc_match:
             raw_code = dtc_match.group(1)
@@ -365,8 +365,8 @@ def parse(text):
             desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
 
             # 🔥 قلب النص العربي
-            if any('\u0600' <= c <= '\u06FF' for c in desc):
-                desc = desc[::-1]
+            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
+            desc = desc.strip()
 
             desc = desc.strip()
 
