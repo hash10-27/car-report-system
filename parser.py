@@ -387,16 +387,16 @@ def parse(text):
                     current_system = "OTHER"
 
             # دمج السطر التالي
-            #if i + 1 < len(lines):
-                #next_line = normalize_line(lines[i + 1])
+            if i + 1 < len(lines):
+                next_line = normalize_line(lines[i + 1])
 
-                #if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
-                    #if not any(x in next_line for x in [
-                       # "على ما يرام",
-                       # "DTC",
-                   #     "الأنظمة"
-                 #   ]):
-                       # desc += " " + next_line
+                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
+                    if not any(x in next_line for x in [
+                        "على ما يرام",
+                        "DTC",
+                        "الأنظمة"
+                    ]):
+                        desc += " " + next_line
 
             system = current_system
 
