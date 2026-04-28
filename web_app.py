@@ -73,6 +73,9 @@ def index():
             # 🔥 تحليل
             data = parse(text)
 
+            if not data:
+                return "❌ فشل استخراج البيانات"
+
             # 🔥 إنشاء التقرير
             output_docx = get_next_filename()
             fill_template(TEMPLATE_PATH, output_docx, data)

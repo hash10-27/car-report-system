@@ -138,52 +138,54 @@ def style_cell(cell, bold=False, color=None):
                 run.font.color.rgb = color
 
 def fill_system_tables(doc, data):
+    print("DATA TYPE:", type(data))
+    print("DATA:", data)
 
-        faults = data.get("faults", [])
+    faults = data.get("faults", [])
 
-        if not faults:
-            return
+    if not faults:
+        return
 
-        table = doc.tables[1]
+    table = doc.tables[1]
 
-        current_system = None
+    current_system = None
 
-        for f in faults:
+    for f in faults:
 
-            system = f["system"]
-            code = f["code"]
-            desc = f["desc"]
+        system = f["system"]
+        code = f["code"]
+        desc = f["desc"]
 
-            # 🔥 إذا تغير النظام → أضف عنوان
-            if system != current_system:
-                current_system = system
+        # 🔥 إذا تغير النظام → أضف عنوان
+        if system != current_system:
+            current_system = system
 
-                row = table.add_row().cells
-                row[0].text = system
-                row[1].text = ""
-                
-                # تنسيق العنوان
-                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-                center_cell(row[0])
-
-            # 🔥 إضافة العطل تحته
             row = table.add_row().cells
-            row[0].text = f"{code}   {desc}"
+            row[0].text = system
             row[1].text = ""
-
-            style_cell(row[0])
+            
+            # تنسيق العنوان
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
             center_cell(row[0])
 
-            # 🔥 تنسيق احترافي
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-            style_cell(row[1], bold=True)
-            style_cell(row[2])
-            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+        # 🔥 إضافة العطل تحته
+        row = table.add_row().cells
+        row[0].text = f"{code}   {desc}"
+        row[1].text = ""
 
-            # 🔥 توسيط الخلايا
-            center_cell(row[0])
-            center_cell(row[1])
-            center_cell(row[2])
+        style_cell(row[0])
+        center_cell(row[0])
+
+        # 🔥 تنسيق احترافي
+        style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
+        style_cell(row[1], bold=True)
+        style_cell(row[2])
+        style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+
+        # 🔥 توسيط الخلايا
+        center_cell(row[0])
+        center_cell(row[1])
+        center_cell(row[2])
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
