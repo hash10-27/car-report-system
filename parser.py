@@ -400,56 +400,52 @@ def parse(text):
         # ✅ الأنظمة السليمة
         # ================================
         if in_ok_section:
-            print("OK SECTION >>>", line)
-            clean_line = re.sub(r'^\d+\.', '', line).strip()
 
-            # ❌ تجاهل نصوص غير أنظمة
+        print("OK SECTION >>>", line)
 
-            # ❌ تجاهل السطور الفارغة
-            if not clean_line:
-                continue
-                
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
-                continue
+        # 🔥 وقف أولاً
+        if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
+            break
 
-            # وقف عند نهاية التقرير
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
-                break
+        clean_line = re.sub(r'^\d+\.', '', line).strip()
 
+        print("RAW LINE >>>", repr(line))
 
-            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
-            if "على ما يرام" in lines[i-1]:
-                pass
+        # ❌ تجاهل الفارغ
+        if not clean_line:
+            continue
 
-            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
+        # ❌ تجاهل النصوص غير المهمة
+        if re.search(r'تقرير|بيانات', clean_line):
+            continue
 
-            print("RAW LINE >>>", repr(line))  # 👈 هنا
+        # 🔥 حماية من index error
+        if i > 0 and "على ما يرام" in lines[i-1]:
+            pass
 
-            
-            # تنظيف
+        clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
-            print("CLEAN LINE >>>", repr(clean_line))  # 👈 
+        print("CLEAN LINE >>>", repr(clean_line))
 
+        # ❌ تجاهل الطويل جدًا
+        if len(clean_line) > 100:
+            continue
 
-            # ✅ اسم نظام حتى لو قصير (مثل EOBD)
+        # ❌ تجاهل الجمل العشوائية
+        if len(clean_line) < 3:
+            continue
 
-            # باقي الشروط...
+        if len(re.findall(r'\d', clean_line)) > 3:
+            continue
 
-            # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
-            # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
-            if len(clean_line) > 100:
-                continue
+        if re.search(r'[PBCU]\d{4}', clean_line):
+            continue
 
-            # ❌ تجاهل النصوص التوضيحية
-            if any(x in clean_line for x in [
-                "هذا التقرير",
-                "بيانات",
-                "LAUNCH"
-            ]):
-                continue
+        if any(x in clean_line for x in [
+            "هذا التقرير",
+            "LAUNCH"
+        ]):
+            continue
 
-            # 🔥 أضف مباشرة بدون شروط قاسية
-            data["systems_ok"].append(clean_line)
-
-
-    return data
+        # ✅ إضافة النظام
+        data["systems_ok"].append(clean_line)
