@@ -166,7 +166,7 @@ def parse(text):
             "test_time": "",
             "sn": ""
         },
-        "systems": [],
+        "systems": {},
         "systems_ok": []
     }
 
@@ -328,112 +328,67 @@ def parse(text):
                 data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
-        system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
+        data["faults"] = []
 
-        clean_line = line.replace(" ", "")
+        current_system = ""
+        last_fault = None
 
-        # 🔥 اكتشاف النظام بشكل قوي
-        if "HC" in clean_line:
-            current_system = "HC"
+        for i, line in enumerate(lines):
 
-        elif "ABS" in clean_line:
-            current_system = "ABS / VSC / TRAC"
+            line = line.strip()
 
-        elif "VSC" in clean_line:
-            current_system = "VSC"
-
-        elif "TRAC" in clean_line:
-            current_system = "TRAC"
-
-        elif "SRS" in clean_line:
-            current_system = "SRS"
-
-        elif "CM" in clean_line:
-            current_system = "CM"
-
-        # ================================
-        # 🔥 الأعطال (بدون section)
-        # ================================
-        dtc_match = re.search(r'([PBCU][0-9A-Z]{4})', line)
-
-        if dtc_match:
-            raw_code = dtc_match.group(1)
-            code = fix_dtc(raw_code)
-            code = re.sub(r'\.\d+$', '', code)
-
-            desc = line.split(raw_code, 1)[-1].strip()
-
-            # 🔥 حذف كلمات مزعجة
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-
-            # 🔥 حذف الأكواد المكررة داخل الوصف
-            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
-
-            # 🔥 قلب النص العربي
-            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
-
-            desc = desc.strip()
-
-            if len(desc) < 3:
+            if not line:
                 continue
-            
-            # 🔥 اكتشاف اسم النظام الحقيقي من السطر (بدون فرض)
-            system_name_match = re.search(r'(?:System|النظام|SYSTEM)\s*[:\-]?\s*(.+)', line, re.IGNORECASE)
 
-            if system_name_match:
-                name = system_name_match.group(1).strip()
+            # 🔥 اكتشاف الكود
+            code_match = re.search(r'[PBCU]\d{4}', line)
 
-                # تنظيف الاسم
-                name = re.sub(r'[\d\.\-]+$', '', name).strip()
+            if code_match:
+                code = code_match.group()
 
-                if len(name) > 2:
-                    current_system = name
+                # تنظيف الوصف
+                desc = line.replace(code, "").strip()
 
-            # تحديد النظام
-            # =========================
-            # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
-            # 🔥 استخدم اسم النظام الحقيقي
-            system = current_system if current_system else "OTHER"
-            # دمج السطر التالي
-            if i + 1 < len(lines):
-                next_line = normalize_line(lines[i + 1])
+                desc = re.sub(r'(الحالي|التاريخ)', '', desc)
+                desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
+                desc = desc.strip()
 
-                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
-                    if not any(x in next_line for x in [
-                        "على ما يرام",
+                if len(desc) < 3:
+                    continue
+
+                fault = {
+                    "system": current_system,
+                    "code": code,
+                    "desc": desc
+                }
+
+                data["faults"].append(fault)
+                last_fault = fault
+
+            else:
+                # 🔥 إذا السطر ليس كود → احتمالين:
+                
+                # 1. تكملة وصف
+                if last_fault and len(line) < 80:
+                    last_fault["desc"] += " " + line
+
+                # 2. اسم نظام جديد
+                else:
+                    # تجاهل أشياء غير مفيدة
+                    if any(x in line for x in [
                         "DTC",
-                        "الأنظمة"
+                        "Present",
+                        "على ما يرام",
+                        "هذا التقرير",
+                        "LAUNCH",
+                        "بيانات"
                     ]):
-                        desc += " " + next_line
+                        continue
 
-            # 🔥 لا تعتمد على current_system نهائياً
-            # استخدم system الذي حددناه من الكود
-            # ❌ تجاهل نصوص ليست أعطال
-            desc = re.split(r'إ.?خل.?اء', desc)[0]
-            desc = desc.strip()
-            
-            if any(x in desc for x in [
-                "إخلاء",
-                "المسؤولية",
-                "هذا التقرير",
-                "لا تتحمل",
-                "أي مسؤولية",
-                "LAUNCH",
-                "بيانات",
-                "service",
-            ]):
-                continue
-            
-            # 🔥 تأكد أن systems قائمة وليس dict
-            if not isinstance(data["systems"], list):
-                data["systems"] = []
+                    # 🔥 هذا هو النظام الحقيقي
+                    current_system = line.strip()
 
-            # ✅ إضافة مباشرة بدون تقسيم
-            data["systems"].append({
-                "system": system,
-                "code": code,
-                "desc": desc.strip()
-            })
+            print("LINE >>>", line)
         print("LINE >>>", line)
         print("MATCH >>>", dtc_match)
 

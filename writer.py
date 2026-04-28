@@ -83,11 +83,16 @@ def build_systems_text(systems):
     if not systems:
         return "لا يوجد أعطال"
 
-    text = "النظام | الكود | الوصف\n"
-    text += "-" * 40 + "\n"
+    text = ""
 
-    for d in systems:
-        text += f"{d['system']} | {d['code']} | {d['desc']}\n"
+    for system, dtcs in systems.items():
+
+        text += f"\n🔧 {system}\n"
+        text += "النظام | الكود | الوصف\n"
+        text += "-" * 30 + "\n"
+
+        for d in dtcs:
+            text += f"{system} | {d['code']} | {d['desc']}\n"
 
     return text
 
@@ -132,48 +137,66 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
-def fill_dtc_table(doc, dtc_list):
+def fill_system_tables(doc, systems_data):
+
+    # 🔥 تطبيع المفاتيح أولاً
+    normalized_data = {}
+
+    for key, value in systems_data.items():
+        fixed = normalize_system_name(key)
+        normalized_data.setdefault(fixed, []).extend(value)
+
+    # ثم استخدم البيانات الجديدة
+    faults = data.get("faults", [])
 
     table = doc.tables[1]  # جدول الأعطال
 
-    # 🔥 تجميع الأعطال حسب النظام
-    grouped = {}
+    current_system = None
 
-    for d in dtc_list:
-        system = d["system"]
+    for f in faults:
 
-        if system not in grouped:
-            grouped[system] = []
+        # 🔥 إذا تغير النظام نضيف عنوان
+        if f["system"] != current_system:
+            current_system = f["system"]
 
-        grouped[system].append(d)
+            row = table.add_row().cells
+            row[0].text = current_system   # النظام
+            row[1].text = ""               # الكود
+            row[2].text = ""               # الوصف
 
-    # 🔥 كتابة الجدول
-    for system, dtcs in grouped.items():
+        # 🔥 إضافة العطل
+        row = table.add_row().cells
+        row[0].text = ""                  # فارغ (تابع للنظام)
+        row[1].text = f["code"]
+        row[2].text = f["desc"]
 
-        for i, d in enumerate(dtcs):
+        for idx, d in enumerate(dtcs):
             row = table.add_row().cells
 
-            # ✅ اسم النظام مرة واحدة فقط
-            if i == 0:
-                row[0].text = system
+            # 🔥 اكتب اسم النظام فقط في أول صف
+            if idx == 0:
+                row[0].text = system_name
             else:
                 row[0].text = ""
 
+            row[0].text = system_name if idx == 0 else ""
             row[1].text = d["code"]
             row[2].text = d["desc"]
 
-            # 🔥 تنسيق
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))
+            # 🔥 تنسيق احترافي
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
+            style_cell(row[1], bold=True)
             style_cell(row[2])
+            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
 
+            # 🔥 توسيط الخلايا
             center_cell(row[0])
             center_cell(row[1])
             center_cell(row[2])
-
+# 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
-    fill_dtc_table(doc, data["systems"])
+    fill_system_tables(doc, data["systems"])
     fill_ok_systems_table(doc, data["systems_ok"])
 
     replacements = {
