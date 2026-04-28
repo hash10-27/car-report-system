@@ -358,7 +358,26 @@ def parse(text):
             break
 
         # 🔍 استخراج الكود
-        
+        elif (
+            # يحتوي حروف كبيرة (رمز النظام)
+            re.search(r'[A-Z]{2,5}', line)
+
+            # ويحتوي نص عربي (اسم النظام)
+            and re.search(r'[\u0600-\u06FF]', line)
+
+            # ليس سطر كود
+            and not re.search(r'[PBCU]\d{4}', line)
+
+            # ليس وصف عطل
+            and "خطأ" not in line
+
+            # ليس جزء من وصف الوسادة LH / HL
+            and not re.fullmatch(r'(LH|RH|HL)', line.strip())
+
+            # ليس رقم أو garbage
+            and len(line.strip()) > 5
+        ):
+            current_system = line.strip()
         raw_code = re.search(r'([PBCU][0-9A-Z]{4}|[0-9]\.[0-9A-Z]{4}[PBCU])', line)
 
         if raw_code:
