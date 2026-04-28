@@ -204,13 +204,13 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
+    data["faults"] = []
+
+    current_system = ""
+    last_fault = None
     
 
     for i, line in enumerate(lines):
-        data["faults"] = []
-
-        current_system = ""
-        last_fault = None
         line = normalize_line(line)
         # 🔥 قلب السطر إذا عربي
 
