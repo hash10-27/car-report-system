@@ -374,7 +374,7 @@ def parse(text):
             if any('\u0600' <= c <= '\u06FF' for c in desc):
                 desc = desc[::-1]
 
-desc = desc.strip()
+            desc = desc.strip()
 
             if len(desc) < 3:
                 continue
