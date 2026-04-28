@@ -43,7 +43,25 @@ def download_file(filename):
 
 def index():
     if request.method == "POST":
-        file = request.files["file"]
+        file = request.files.get("file")
+
+        if not file or file.filename == "":
+            return "❌ لم يتم اختيار ملف"
+
+        import os
+        from werkzeug.utils import secure_filename
+
+        filename = secure_filename(file.filename)
+
+        # 🔥 إذا التابلت أرسل اسم غريب
+        if not filename.lower().endswith(".pdf"):
+            filename = "upload.pdf"
+
+        file_path = os.path.join("uploads", filename)
+
+        file.save(file_path)
+
+        print("FILE SAVED:", file_path)
 
         if file:
             pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)

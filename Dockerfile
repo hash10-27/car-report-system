@@ -13,4 +13,4 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "web_app.py"]
+CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:10000", "web_app:app"]
