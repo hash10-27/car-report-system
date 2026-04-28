@@ -325,7 +325,7 @@ def parse(text):
         elif "SN" in line and not data["meta"]["sn"]:
             sn = re.search(r'\d{8,}', line)
             if sn:
-                data["meta"]["sn"] = fix_number((sn.group))
+                data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
         system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
