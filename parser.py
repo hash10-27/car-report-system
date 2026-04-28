@@ -356,12 +356,6 @@ def parse(text):
             code = fix_dtc(raw_code)
             code = re.sub(r'\.\d+$', '', code)
 
-            # 🔥 إذا الكود مقلوب (ينتهي بحرف مثل P B C U)
-            if raw_code[-1] in "PBCU":
-                code = raw_code[::-1]
-            else:
-                code = raw_code
-
             desc = line.split(raw_code, 1)[-1].strip()
 
             # 🔥 حذف كلمات مزعجة
