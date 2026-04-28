@@ -370,8 +370,14 @@ def parse(text):
                 # 🔥 إذا السطر ليس كود → احتمالين:
                 
                 # 1. تكملة وصف
-                if last_fault and len(line) < 80:
-                    last_fault["desc"] += " " + line
+                # 🔥 إذا السطر ليس كود
+                if last_fault and not re.search(r'[PBCU]\d{4}', line) and not line.isupper():
+
+                    # تأكد أنه ليس اسم نظام
+                    if not any(x in line for x in ["نظام", "System"]):
+                        last_fault["desc"] += " " + line
+                    else:
+                        current_system = line.strip()
 
                 # 2. اسم نظام جديد
                 else:
@@ -389,9 +395,6 @@ def parse(text):
                     # 🔥 هذا هو النظام الحقيقي
                     current_system = line.strip()
 
-            print("LINE >>>", line)
-        print("LINE >>>", line)
-        print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
@@ -443,6 +446,5 @@ def parse(text):
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
 
-        print("FINAL DATA >>>", data)
 
     return data
