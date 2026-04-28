@@ -83,16 +83,11 @@ def build_systems_text(systems):
     if not systems:
         return "لا يوجد أعطال"
 
-    text = ""
+    text = "النظام | الكود | الوصف\n"
+    text += "-" * 40 + "\n"
 
-    for system, dtcs in systems.items():
-
-        text += f"\n🔧 {system}\n"
-        text += "النظام | الكود | الوصف\n"
-        text += "-" * 30 + "\n"
-
-        for d in dtcs:
-            text += f"{system} | {d['code']} | {d['desc']}\n"
+    for d in systems:
+        text += f"{d['system']} | {d['code']} | {d['desc']}\n"
 
     return text
 

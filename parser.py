@@ -354,7 +354,7 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
+        dtc_match = re.search(r'([PBCU][0-9A-Z]{4})', line)
 
         if dtc_match:
             raw_code = dtc_match.group(1)
@@ -371,7 +371,6 @@ def parse(text):
 
             # 🔥 قلب النص العربي
             # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
-            desc = desc.strip()
 
             desc = desc.strip()
 
