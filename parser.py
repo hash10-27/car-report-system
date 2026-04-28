@@ -122,6 +122,11 @@ def fix_dtc(code):
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
     return match.group(1) if match else code
 
+def fix_number(value):
+    if not value:
+        return value
+    return value[::-1]
+
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -303,7 +308,7 @@ def parse(text):
         elif "الهاتف" in clean:
             phone = re.search(r'\d{6,}', line)
             if phone:
-                data["customer_info"]["phone"] = phone.group()
+                data["customer_info"]["phone"] = fix_number(phone.group())
 
         # ================================
         # ⚙️ بيانات إضافية
@@ -451,8 +456,7 @@ def parse(text):
 
             # وقف عند نهاية التقرير
             if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
-                in_ok_section = False
-                continue
+                break
 
             # تنظيف
             clean_line = re.sub(r'^\d+\.', '', line).strip()
@@ -464,9 +468,16 @@ def parse(text):
                 continue
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
+            added = False
+
             if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
                 data["systems_ok"].append(clean_line)
+                added = True
+
+            if added:
                 continue
+
+            # باقي الشروط...
 
             # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
             # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
