@@ -407,6 +407,18 @@ def parse(text):
 
             # 🔥 لا تعتمد على current_system نهائياً
             # استخدم system الذي حددناه من الكود
+            # ❌ تجاهل نصوص ليست أعطال
+            if any(x in desc for x in [
+                "إخلاء",
+                "المسؤولية",
+                "هذا التقرير",
+                "لا تتحمل",
+                "أي مسؤولية",
+                "LAUNCH",
+                "بيانات",
+                "service",
+            ]):
+                continue
 
             if system not in data["systems"]:
                 data["systems"][system] = []
