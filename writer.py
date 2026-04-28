@@ -153,18 +153,17 @@ def fill_system_tables(doc, data):
 
         # 🔥 إضافة العطل تحته
         row = table.add_row().cells
-        row[0].text = f"{code}   {desc}"
-        row[1].text = ""
+        row[0].text = system      # اسم النظام
+        row[1].text = code        # الكود
+        row[2].text = desc        # الوصف
 
         style_cell(row[0])
         center_cell(row[0])
 
         # 🔥 تنسيق احترافي
-        style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-        style_cell(row[1], bold=True)
+        style_cell(row[0], bold=True)
+        style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))
         style_cell(row[2])
-        style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
-
         # 🔥 توسيط الخلايا
         center_cell(row[0])
         center_cell(row[1])
