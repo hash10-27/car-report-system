@@ -401,30 +401,35 @@ def parse(text):
         # ================================
         if in_ok_section:
             print("OK SECTION >>>", line)
+            clean_line = re.sub(r'^\d+\.', '', line).strip()
+
             # ❌ تجاهل نصوص غير أنظمة
+
+            # ❌ تجاهل السطور الفارغة
+            if not clean_line:
+                continue
+                
             if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
                 continue
-
-            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
-            if "على ما يرام" in lines[i-1]:
-                pass
-
-            print("RAW LINE >>>", repr(line))  # 👈 هنا
 
             # وقف عند نهاية التقرير
             if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
                 break
 
+
+            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
+            if "على ما يرام" in lines[i-1]:
+                pass
+
+            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
+
+            print("RAW LINE >>>", repr(line))  # 👈 هنا
+
+            
             # تنظيف
-            clean_line = re.sub(r'^\d+\.', '', line).strip()
 
             print("CLEAN LINE >>>", repr(clean_line))  # 👈 
 
-            # ❌ تجاهل السطور الفارغة
-            if not clean_line:
-                continue
-            
-            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
 
