@@ -408,6 +408,8 @@ def parse(text):
             # 🔥 لا تعتمد على current_system نهائياً
             # استخدم system الذي حددناه من الكود
             # ❌ تجاهل نصوص ليست أعطال
+            desc = re.split(r'إ.?خل.?اء', desc)[0]
+            desc = desc.strip()
             
             if any(x in desc for x in [
                 "إخلاء",
