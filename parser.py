@@ -408,6 +408,10 @@ def parse(text):
             # 🔥 لا تعتمد على current_system نهائياً
             # استخدم system الذي حددناه من الكود
             # ❌ تجاهل نصوص ليست أعطال
+
+            if system not in data["systems"]:
+                data["systems"][system] = []
+            
             if any(x in desc for x in [
                 "إخلاء",
                 "المسؤولية",
@@ -419,9 +423,6 @@ def parse(text):
                 "service",
             ]):
                 continue
-
-            if system not in data["systems"]:
-                data["systems"][system] = []
 
             data["systems"][system].append({
                 "system": system,
