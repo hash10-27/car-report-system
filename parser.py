@@ -342,14 +342,15 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'\b([PCBU][0-9]{4})\b', line)
+        dtc_match = re.search(r'\b([PCBU][0-9A-Z]{4})\b', line)
 
-        if dtc_match and not in_ok_section:
+        if dtc_match:
             code = dtc_match.group(1)
             desc = line.split(code, 1)[-1].strip()
 
             # إصلاح الاتجاه
-            desc = desc[::-1]
+            if any('\u0600' <= c <= '\u06FF' for c in desc):
+                desc = desc[::-1]
 
             if len(desc) < 3:
                 continue
@@ -371,13 +372,13 @@ def parse(text):
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
 
-                if next_line and not re.search(r'[PCBU][0-9]{4}', next_line):
+                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
                     if not any(x in next_line for x in [
-                        "الأنظمة التالية",
                         "على ما يرام",
-                        "DTC"
+                        "DTC",
+                        "الأنظمة"
                     ]):
-                        desc += " " + next_line[::-1]
+                        desc += " " + next_line
 
             system = current_system
 
@@ -389,7 +390,8 @@ def parse(text):
                 "code": code,
                 "desc": desc.strip()
             })
-
+        print("LINE >>>", line)
+        print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
