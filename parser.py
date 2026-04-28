@@ -204,11 +204,6 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
-    data["faults"] = []
-
-    current_system = ""
-    last_fault = None
-    
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
@@ -380,60 +375,69 @@ def parse(text):
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
         
-        # ====================================
-        # 🔥 معالجة الأعطال (خارج اللوب)
-        # ====================================
-        
+    # ====================================
+# 🔥 معالجة الأعطال (مرة واحدة فقط)
+# ====================================
+data["faults"] = []
 
-        for line in lines:
+current_system = ""
+last_fault = None
+in_dtc_section = False
 
-            line = line.strip()
-            if not line:
-                continue
+for line in lines:
 
-            code_match = re.search(r'[PBCU]\d{4}', line)
+    line = line.strip()
+    if not line:
+        continue
 
-            # 🔥 إذا ما لقى — جرب السطر مقلوب
-            if not code_match:
-                rev_line = line[::-1]
-                code_match = re.search(r'[PBCU]\d{4}', rev_line)
+    # 🔥 بداية قسم الأعطال
+    if "رمز" in line and "خطأ" in line:
+        in_dtc_section = True
+        continue
 
-                if code_match:
-                    code = code_match.group()[::-1]  # نرجعه للوضع الصحيح
-                else:
-                    code = None
-            else:
-                code = code_match.group()
+    # ❌ تجاهل أي شيء قبل قسم الأعطال
+    if not in_dtc_section:
+        continue
 
-            if code:
+    # 🔥 نهاية القسم
+    if "على ما يرام" in line or "إخلاء المسؤولية" in line:
+        break
 
-                desc = line.replace(code, "").strip()
-                desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-                desc = desc.strip()
+    # 🔍 استخراج الكود
+    code_match = re.search(r'[PBCU]\d{4}', line)
 
-                if len(desc) < 3:
-                    continue
+    if not code_match:
+        rev = line[::-1]
+        code_match = re.search(r'[PBCU]\d{4}', rev)
+        code = code_match.group()[::-1] if code_match else None
+    else:
+        code = code_match.group()
 
-                fault = {
-                    "system": current_system,
-                    "code": code,
-                    "desc": desc
-                }
+    if code:
+        desc = line.replace(code, "").strip()
+        desc = re.sub(r'(الحالي|التاريخ)', '', desc).strip()
 
-                data["faults"].append(fault)
-                last_fault = fault
+        if len(desc) < 3:
+            continue
 
-            else:
-                # 🔥 تكملة وصف
-                if last_fault and len(line) < 80 and not re.search(r'[PBCU]\d{4}', line):
-                    last_fault["desc"] += " " + line
+        fault = {
+            "system": current_system,
+            "code": code,
+            "desc": desc
+        }
 
-                # 🔥 اسم نظام
-                elif not any(x in line for x in [
-                    "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
-                ]):
-                    current_system = line.strip()
-            print("LINE >>>", line)
-            print("CODE >>>", code)
+        data["faults"].append(fault)
+        last_fault = fault
+
+    else:
+        # تكملة وصف
+        if last_fault and len(line) < 80:
+            last_fault["desc"] += " " + line
+
+        # اسم نظام جديد
+        elif not any(x in line for x in [
+            "DTC", "Present", "هذا التقرير", "LAUNCH", "بيانات"
+        ]):
+            current_system = line.strip()
 
     return data
