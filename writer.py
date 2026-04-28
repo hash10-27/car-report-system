@@ -137,51 +137,42 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
-def fill_system_tables(doc, systems_data):
+def fill_system_tables(doc, data):
 
-    # 🔥 تطبيع المفاتيح أولاً
-    normalized_data = {}
+        faults = data.get("faults", [])
 
-    for key, value in systems_data.items():
-        fixed = normalize_system_name(key)
-        normalized_data.setdefault(fixed, []).extend(value)
+        if not faults:
+            return
 
-    # ثم استخدم البيانات الجديدة
-    faults = data.get("faults", [])
+        table = doc.tables[1]
 
-    table = doc.tables[1]  # جدول الأعطال
+        current_system = None
 
-    current_system = None
+        for f in faults:
 
-    for f in faults:
+            system = f["system"]
+            code = f["code"]
+            desc = f["desc"]
 
-        # 🔥 إذا تغير النظام نضيف عنوان
-        if f["system"] != current_system:
-            current_system = f["system"]
+            # 🔥 إذا تغير النظام → أضف عنوان
+            if system != current_system:
+                current_system = system
 
+                row = table.add_row().cells
+                row[0].text = system
+                row[1].text = ""
+                
+                # تنسيق العنوان
+                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+                center_cell(row[0])
+
+            # 🔥 إضافة العطل تحته
             row = table.add_row().cells
-            row[0].text = current_system   # النظام
-            row[1].text = ""               # الكود
-            row[2].text = ""               # الوصف
+            row[0].text = f"{code}   {desc}"
+            row[1].text = ""
 
-        # 🔥 إضافة العطل
-        row = table.add_row().cells
-        row[0].text = ""                  # فارغ (تابع للنظام)
-        row[1].text = f["code"]
-        row[2].text = f["desc"]
-
-        for idx, d in enumerate(dtcs):
-            row = table.add_row().cells
-
-            # 🔥 اكتب اسم النظام فقط في أول صف
-            if idx == 0:
-                row[0].text = system_name
-            else:
-                row[0].text = ""
-
-            row[0].text = system_name if idx == 0 else ""
-            row[1].text = d["code"]
-            row[2].text = d["desc"]
+            style_cell(row[0])
+            center_cell(row[0])
 
             # 🔥 تنسيق احترافي
             style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
@@ -196,7 +187,7 @@ def fill_system_tables(doc, systems_data):
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
-    fill_system_tables(doc, data["systems"])
+    fill_system_tables(doc, data)
     fill_ok_systems_table(doc, data["systems_ok"])
 
     replacements = {
