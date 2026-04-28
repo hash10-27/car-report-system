@@ -7,25 +7,6 @@
 <title>تحويل التقارير</title>
 
 <style>
-
-<script>
-    function printFile() {
-        const link = document.querySelector('a[href^="/download"]');
-        if (!link) return;
-
-        const fileUrl = link.href;
-
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = fileUrl;
-
-        document.body.appendChild(iframe);
-
-        iframe.onload = function() {
-            iframe.contentWindow.print();
-        };
-    }
-    </script>
 body {
     font-family: Arial;
     background: #1e1e2f;
@@ -44,8 +25,27 @@ button {
     padding: 15px 30px;
     font-size: 18px;
     margin-top: 15px;
+    cursor: pointer;
 }
 </style>
+
+<script>
+function printFile() {
+    const link = document.querySelector('a[href^="/download"]');
+    if (!link) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = link.href;
+
+    document.body.appendChild(iframe);
+
+    iframe.onload = function() {
+        iframe.contentWindow.print();
+    };
+}
+</script>
+
 </head>
 
 <body>
@@ -53,8 +53,11 @@ button {
 <div class="box">
     <h2>📊 تحويل تقرير السيارة</h2>
 
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data"
+          onsubmit="this.querySelector('button').disabled = true;">
+        
         <input type="file" name="file" accept=".pdf" required><br><br>
+
         <button type="submit">⚙️ تحويل</button>
     </form>
 
