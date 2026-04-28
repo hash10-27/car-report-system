@@ -328,54 +328,7 @@ def parse(text):
                 data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
-        
-        # ================================
-        # ✅ الأنظمة السليمة
-        # ================================
-        if in_ok_section:
-            print("OK SECTION >>>", line)
-
-            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
-            if "على ما يرام" in lines[i-1]:
-                pass
-
-            print("RAW LINE >>>", repr(line))  # 👈 هنا
-
-            # وقف عند نهاية التقرير
-            if "إخلاء المسؤولية" in line:
-                break
-
-            # تنظيف
-            clean_line = re.sub(r'^\d+\.', '', line).strip()
-
-            print("CLEAN LINE >>>", repr(clean_line))  # 👈 
-
-            # ❌ تجاهل السطور الفارغة
-            if not clean_line:
-                continue
-
-            # ✅ اسم نظام حتى لو قصير (مثل EOBD)
-            if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
-                data["systems_ok"].append(clean_line)
-                continue
-
-            # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
-            # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
-            if len(clean_line) > 100:
-                continue
-
-            # ❌ تجاهل النصوص التوضيحية
-            if any(x in clean_line for x in [
-                "هذا التقرير",
-                "بيانات",
-                "LAUNCH"
-            ]):
-                continue
-
-            # 🔥 أضف مباشرة بدون شروط قاسية
-            data["systems_ok"].append(clean_line)
-        
-    # ====================================
+        # ====================================
     # 🔥 معالجة الأعطال (مرة واحدة فقط)
     # ====================================
     data["faults"] = []
@@ -446,5 +399,52 @@ def parse(text):
                 "DTC", "Present", "هذا التقرير", "LAUNCH", "بيانات"
             ]):
                 current_system = line.strip()
+        
+        # ================================
+        # ✅ الأنظمة السليمة
+        # ================================
+        if in_ok_section:
+            print("OK SECTION >>>", line)
+
+            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
+            if "على ما يرام" in lines[i-1]:
+                pass
+
+            print("RAW LINE >>>", repr(line))  # 👈 هنا
+
+            # وقف عند نهاية التقرير
+            if "إخلاء المسؤولية" in line:
+                break
+
+            # تنظيف
+            clean_line = re.sub(r'^\d+\.', '', line).strip()
+
+            print("CLEAN LINE >>>", repr(clean_line))  # 👈 
+
+            # ❌ تجاهل السطور الفارغة
+            if not clean_line:
+                continue
+
+            # ✅ اسم نظام حتى لو قصير (مثل EOBD)
+            if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
+                data["systems_ok"].append(clean_line)
+                continue
+
+            # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
+            # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
+            if len(clean_line) > 100:
+                continue
+
+            # ❌ تجاهل النصوص التوضيحية
+            if any(x in clean_line for x in [
+                "هذا التقرير",
+                "بيانات",
+                "LAUNCH"
+            ]):
+                continue
+
+            # 🔥 أضف مباشرة بدون شروط قاسية
+            data["systems_ok"].append(clean_line)
+        
 
     return data
