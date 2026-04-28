@@ -376,68 +376,75 @@ def parse(text):
             data["systems_ok"].append(clean_line)
         
     # ====================================
-# 🔥 معالجة الأعطال (مرة واحدة فقط)
-# ====================================
-data["faults"] = []
+    # 🔥 معالجة الأعطال (مرة واحدة فقط)
+    # ====================================
+    data["faults"] = []
 
-current_system = ""
-last_fault = None
-in_dtc_section = False
+    current_system = ""
+    last_fault = None
+    in_dtc_section = False
 
-for line in lines:
+    for line in lines:
 
-    line = line.strip()
-    if not line:
-        continue
-
-    # 🔥 بداية قسم الأعطال
-    if "رمز" in line and "خطأ" in line:
-        in_dtc_section = True
-        continue
-
-    # ❌ تجاهل أي شيء قبل قسم الأعطال
-    if not in_dtc_section:
-        continue
-
-    # 🔥 نهاية القسم
-    if "على ما يرام" in line or "إخلاء المسؤولية" in line:
-        break
-
-    # 🔍 استخراج الكود
-    code_match = re.search(r'[PBCU]\d{4}', line)
-
-    if not code_match:
-        rev = line[::-1]
-        code_match = re.search(r'[PBCU]\d{4}', rev)
-        code = code_match.group()[::-1] if code_match else None
-    else:
-        code = code_match.group()
-
-    if code:
-        desc = line.replace(code, "").strip()
-        desc = re.sub(r'(الحالي|التاريخ)', '', desc).strip()
-
-        if len(desc) < 3:
+        line = line.strip()
+        if not line:
             continue
 
-        fault = {
-            "system": current_system,
-            "code": code,
-            "desc": desc
-        }
+        # 🔥 بداية قسم الأعطال
+        if "رمز" in line:
+            in_dtc_section = True
+            continue
 
-        data["faults"].append(fault)
-        last_fault = fault
+        # ❌ تجاهل أي شيء قبل قسم الأعطال
+        if not in_dtc_section:
+            continue
 
-    else:
-        # تكملة وصف
-        if last_fault and len(line) < 80:
-            last_fault["desc"] += " " + line
+        # 🔥 نهاية القسم
+        if "على ما يرام" in line or "إخلاء المسؤولية" in line:
+            break
 
-        # اسم نظام جديد
-        elif not any(x in line for x in [
-            "DTC", "Present", "هذا التقرير", "LAUNCH", "بيانات"
-        ]):
-            current_system = line.strip()
+        # 🔍 استخراج الكود
+        raw_code = re.search(r'([PBCU][0-9A-Z]{4}|[0-9]\.[0-9A-Z]{4}[PBCU])', line)
+
+        if raw_code:
+            raw = raw_code.group()
+
+            # 🔥 إذا كان طبيعي
+            if re.match(r'[PBCU]\d{4}', raw):
+                code = raw
+
+            # 🔥 إذا كان مقلوب مثل 1.6AA0P
+            else:
+                raw = raw.replace(".", "")
+                code = raw[::-1]
+        else:
+            code = None
+
+        if code:
+            desc = line.replace(code, "").strip()
+            desc = re.sub(r'(الحالي|التاريخ)', '', desc).strip()
+
+            if len(desc) < 3:
+                continue
+
+            fault = {
+                "system": current_system,
+                "code": code,
+                "desc": desc
+            }
+
+            data["faults"].append(fault)
+            last_fault = fault
+
+        else:
+            # تكملة وصف
+            if last_fault and len(line) < 80:
+                last_fault["desc"] += " " + line
+
+            # اسم نظام جديد
+            elif not any(x in line for x in [
+                "DTC", "Present", "هذا التقرير", "LAUNCH", "بيانات"
+            ]):
+                current_system = line.strip()
 
     return data
