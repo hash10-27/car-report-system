@@ -376,27 +376,24 @@ def parse(text):
 
             if len(desc) < 3:
                 continue
+            
+            # 🔥 اكتشاف اسم النظام الحقيقي من السطر (بدون فرض)
+            system_name_match = re.search(r'(?:System|النظام|SYSTEM)\s*[:\-]?\s*(.+)', line, re.IGNORECASE)
+
+            if system_name_match:
+                name = system_name_match.group(1).strip()
+
+                # تنظيف الاسم
+                name = re.sub(r'[\d\.\-]+$', '', name).strip()
+
+                if len(name) > 2:
+                    current_system = name
 
             # تحديد النظام
             # =========================
             # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
-            if code.startswith("P"):
-                system = "HC"
-
-            elif code.startswith("C"):
-                system = "ABS / VSC / TRAC"
-
-            elif code.startswith("B"):
-                if code.startswith(("B15", "B16", "B17")):
-                    system = "CM"
-                else:
-                    system = "SRS"
-
-            elif code.startswith("U"):
-                system = "NETWORK"
-
-            else:
-                system = "OTHER"
+            # 🔥 استخدم اسم النظام الحقيقي
+            system = current_system if current_system else "OTHER"
             # دمج السطر التالي
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
