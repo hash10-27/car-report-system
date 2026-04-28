@@ -115,6 +115,12 @@ def fix_mileage(m):
 
     return m
 
+def fix_dtc(code):
+    # لو الحرف في النهاية → اقلب
+    if code[-1] in "PBCU":
+        return code[::-1]
+    return code
+
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -342,11 +348,19 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'\b([PCBU][0-9A-Z]{4})\b', line)
+        dtc_match = re.search(r'([0-9]*\.?[0-9]*)([A-Z0-9]{4,5})', line)
 
         if dtc_match:
-            code = dtc_match.group(1)
-            desc = line.split(code, 1)[-1].strip()
+            raw_code = dtc_match.group(2)
+            code = fix_dtc(raw_code)
+
+            # 🔥 إذا الكود مقلوب (ينتهي بحرف مثل P B C U)
+            if raw_code[-1] in "PBCU":
+                code = raw_code[::-1]
+            else:
+                code = raw_code
+
+            desc = line.split(dtc_match.group(0), 1)[-1].strip()
 
             # إصلاح الاتجاه
             if any('\u0600' <= c <= '\u06FF' for c in desc):
