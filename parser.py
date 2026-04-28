@@ -328,30 +328,27 @@ def parse(text):
                 data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
+        # ====================================
+        # 🔥 معالجة الأعطال (مرة واحدة فقط)
+        # ====================================
         data["faults"] = []
 
         current_system = ""
         last_fault = None
-        dtc_match = None
 
-        for i, line in enumerate(lines):
+        for line in lines:
 
             line = line.strip()
-
             if not line:
                 continue
 
-            # 🔥 اكتشاف الكود
             code_match = re.search(r'[PBCU]\d{4}', line)
 
             if code_match:
                 code = code_match.group()
 
-                # تنظيف الوصف
                 desc = line.replace(code, "").strip()
-
                 desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-                desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
                 desc = desc.strip()
 
                 if len(desc) < 3:
@@ -367,34 +364,15 @@ def parse(text):
                 last_fault = fault
 
             else:
-                # 🔥 إذا السطر ليس كود → احتمالين:
-                
-                # 1. تكملة وصف
-                # 🔥 إذا السطر ليس كود
-                if last_fault and not re.search(r'[PBCU]\d{4}', line) and not line.isupper():
+                # 🔥 تكملة وصف
+                if last_fault and len(line) < 80 and not re.search(r'[PBCU]\d{4}', line):
+                    last_fault["desc"] += " " + line
 
-                    # تأكد أنه ليس اسم نظام
-                    if not any(x in line for x in ["نظام", "System"]):
-                        last_fault["desc"] += " " + line
-                    else:
-                        current_system = line.strip()
-
-                # 2. اسم نظام جديد
-                else:
-                    # تجاهل أشياء غير مفيدة
-                    if any(x in line for x in [
-                        "DTC",
-                        "Present",
-                        "على ما يرام",
-                        "هذا التقرير",
-                        "LAUNCH",
-                        "بيانات"
-                    ]):
-                        continue
-
-                    # 🔥 هذا هو النظام الحقيقي
+                # 🔥 اسم نظام
+                elif not any(x in line for x in [
+                    "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
+                ]):
                     current_system = line.strip()
-
 
         # ================================
         # ✅ الأنظمة السليمة
