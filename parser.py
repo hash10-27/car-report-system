@@ -196,13 +196,10 @@ def parse(text):
     for i, line in enumerate(lines):
         line = normalize_line(line)
         # 🔥 قلب السطر إذا عربي
-        lines = text.split("\n")
 
         # 🔥 إصلاح الأرقام (ترجع 4102 → 2014)
         import re
-        numbers = re.findall(r'\d+', line)
-        for num in numbers:
-            line = line.replace(num, num[::-1])
+
 
         if not line:
             continue
@@ -345,21 +342,19 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'([PBCU][0-9A-Z]{4})', line)
+        dtc_match = re.search(r'\b([PCBU][0-9]{4})\b', line)
 
-        if dtc_match:
+        if dtc_match and not in_ok_section:
             code = dtc_match.group(1)
             desc = line.split(code, 1)[-1].strip()
+
+            # إصلاح الاتجاه
+            desc = desc[::-1]
 
             if len(desc) < 3:
                 continue
 
-                # 🔥 الفلتر هنا (داخل الشرط)
-            if "المحرك" in desc or "حجم" in desc or len(desc) < 3:
-                continue
-
-            # ❌ تجاهل إذا لم يتم تحديد النظام
-            # إذا ما تم تحديد النظام → نحدد من الكود
+            # تحديد النظام
             if not current_system:
                 if code.startswith("P"):
                     current_system = "HC"
@@ -372,53 +367,27 @@ def parse(text):
                 else:
                     current_system = "OTHER"
 
-            # دمج السطر التالي للوصف
+            # دمج السطر التالي
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
 
-                # 🔥 شروط صارمة
-                if next_line and not re.search(r'[PBCU]\d{4}', next_line):
-
-                    # ❌ لا تدمج إذا بداية قسم جديد
-                    if any(x in next_line for x in [
+                if next_line and not re.search(r'[PCBU][0-9]{4}', next_line):
+                    if not any(x in next_line for x in [
                         "الأنظمة التالية",
                         "على ما يرام",
-                        "النظام التالي",
-                        "DTC",
-                        "قبل الإصلاح"
+                        "DTC"
                     ]):
-                        pass
-                    else:
-                        desc += " " + next_line
+                        desc += " " + next_line[::-1]
 
-            # 🔥 تحديد النظام (مرة واحدة فقط)
-            # 🔥 الأولوية للنظام المكتشف من النص
-            # 🔥 استخدم النظام الحالي أولاً
             system = current_system
 
-            # إذا غير موجود → fallback
-            if not system:
-                if code.startswith("P") or code.startswith("U"):
-                    system = "HC"
-                elif code.startswith("C"):
-                    system = "ABS"
-                elif code.startswith("B"):
-                    system = "CM" if code.startswith("B150") else "SRS"
-                else:
-                    system = "OTHER"
-
-            # إنشاء القسم إذا غير موجود
             if system not in data["systems"]:
                 data["systems"][system] = []
 
-            # اختصار الوصف
-            short_desc = desc
-            
-            # إضافة العطل
             data["systems"][system].append({
                 "system": system,
                 "code": code,
-                "desc": short_desc
+                "desc": desc.strip()
             })
 
 
