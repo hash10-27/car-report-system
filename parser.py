@@ -204,8 +204,13 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
+    
 
     for i, line in enumerate(lines):
+        data["faults"] = []
+
+        current_system = ""
+        last_fault = None
         line = normalize_line(line)
         # 🔥 قلب السطر إذا عربي
 
@@ -378,10 +383,7 @@ def parse(text):
         # ====================================
         # 🔥 معالجة الأعطال (خارج اللوب)
         # ====================================
-        data["faults"] = []
-
-        current_system = ""
-        last_fault = None
+        
 
         for line in lines:
 
