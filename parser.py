@@ -439,6 +439,9 @@ def parse(text):
         # ================================
         if in_ok_section:
             print("OK SECTION >>>", line)
+            # ❌ تجاهل نصوص غير أنظمة
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
+                continue
 
             # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
             if "على ما يرام" in lines[i-1]:
@@ -447,9 +450,8 @@ def parse(text):
             print("RAW LINE >>>", repr(line))  # 👈 هنا
 
             # وقف عند نهاية التقرير
-            if "إخلاء المسؤولية" in line:
-                break
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول', desc):
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
+                in_ok_section = False
                 continue
 
             # تنظيف
