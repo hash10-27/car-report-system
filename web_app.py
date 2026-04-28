@@ -38,9 +38,7 @@ def get_next_filename(base_name="report", ext=".docx"):
 def download_file(filename):
     path = os.path.join(OUTPUT_FOLDER, filename)
     return send_file(path, as_attachment=True)
-
 @app.route("/", methods=["GET", "POST"])
-
 def index():
     if request.method == "POST":
         file = request.files.get("file")
@@ -48,40 +46,45 @@ def index():
         if not file or file.filename == "":
             return "❌ لم يتم اختيار ملف"
 
-        import os
         from werkzeug.utils import secure_filename
 
         filename = secure_filename(file.filename)
 
-        # 🔥 إذا التابلت أرسل اسم غريب
+        # إذا الاسم غريب من التابلت
         if not filename.lower().endswith(".pdf"):
             filename = "upload.pdf"
 
-        file_path = os.path.join("uploads", filename)
+        pdf_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        file.save(file_path)
+        # ✅ حفظ مرة واحدة فقط
+        file.save(pdf_path)
 
-        print("FILE SAVED:", file_path)
+        # ✅ تحقق من الحجم
+        size = os.path.getsize(pdf_path)
+        print("FILE SIZE:", size)
 
-        if file:
-            pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
-            file.save(pdf_path)
+        if size == 0:
+            return "❌ الملف فارغ (فشل الرفع من التابلت)"
 
-            # 🔥 نفس منطقك بدون تغيير
+        try:
+            # 🔥 استخراج النص
             text = extract_text(pdf_path)
 
-            # 🔥 إصلاح اتجاه النص (هنا الحل الحقيقي)
-            #text = fix_full_text(text)
-
+            # 🔥 تحليل
             data = parse(text)
+
+            # 🔥 إنشاء التقرير
             output_docx = get_next_filename()
             fill_template(TEMPLATE_PATH, output_docx, data)
 
             filename = os.path.basename(output_docx)
             return render_template("index.html", file_ready=filename)
 
-    return render_template("index.html")
+        except Exception as e:
+            print("ERROR:", e)
+            return "❌ فشل المعالجة (راجع اللوق)"
 
+    return render_template("index.html")
 
 if __name__ == "__main__":
     import os
