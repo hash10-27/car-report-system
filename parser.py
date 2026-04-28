@@ -115,11 +115,7 @@ def fix_mileage(m):
 
     return m
 
-def fix_dtc(code):
-    # لو الحرف في النهاية → اقلب
-    if code[-1] in "PBCU":
-        return code[::-1]
-    return code
+
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -352,7 +348,6 @@ def parse(text):
 
         if dtc_match:
             raw_code = dtc_match.group(2)
-            code = fix_dtc(raw_code)
 
             # 🔥 إذا الكود مقلوب (ينتهي بحرف مثل P B C U)
             if raw_code[-1] in "PBCU":
