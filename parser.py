@@ -253,7 +253,7 @@ def parse(text):
         if "السنة" in clean:
             year = re.search(r'\d{4}', line)
             if year:
-                data["car_info"]["year"] = year.group()
+                data["car_info"]["year"] = fix_number(year.group())
 
         elif "الصانع" in clean:
             make = re.search(r'[A-Z]+', line)
@@ -325,7 +325,7 @@ def parse(text):
         elif "SN" in line and not data["meta"]["sn"]:
             sn = re.search(r'\d{8,}', line)
             if sn:
-                data["meta"]["sn"] = sn.group()
+                data["meta"]["sn"] = fix_number((sn.group))
 
         # 🔥 اكتشاف اسم النظام من السطر
         system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
@@ -466,16 +466,10 @@ def parse(text):
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
                 continue
+            
+            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
-            added = False
-
-            if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
-                data["systems_ok"].append(clean_line)
-                added = True
-
-            if added:
-                continue
 
             # باقي الشروط...
 
