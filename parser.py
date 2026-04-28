@@ -328,52 +328,7 @@ def parse(text):
                 data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
-        # ====================================
-        # 🔥 معالجة الأعطال (مرة واحدة فقط)
-        # ====================================
-        data["faults"] = []
-
-        current_system = ""
-        last_fault = None
-
-        for line in lines:
-
-            line = line.strip()
-            if not line:
-                continue
-
-            code_match = re.search(r'[PBCU]\d{4}', line)
-
-            if code_match:
-                code = code_match.group()
-
-                desc = line.replace(code, "").strip()
-                desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-                desc = desc.strip()
-
-                if len(desc) < 3:
-                    continue
-
-                fault = {
-                    "system": current_system,
-                    "code": code,
-                    "desc": desc
-                }
-
-                data["faults"].append(fault)
-                last_fault = fault
-
-            else:
-                # 🔥 تكملة وصف
-                if last_fault and len(line) < 80 and not re.search(r'[PBCU]\d{4}', line):
-                    last_fault["desc"] += " " + line
-
-                # 🔥 اسم نظام
-                elif not any(x in line for x in [
-                    "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
-                ]):
-                    current_system = line.strip()
-
+        
         # ================================
         # ✅ الأنظمة السليمة
         # ================================
@@ -419,5 +374,51 @@ def parse(text):
 
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
+        
+        # ====================================
+        # 🔥 معالجة الأعطال (خارج اللوب)
+        # ====================================
+        data["faults"] = []
+
+        current_system = ""
+        last_fault = None
+
+        for line in lines:
+
+            line = line.strip()
+            if not line:
+                continue
+
+            code_match = re.search(r'[PBCU]\d{4}', line)
+
+            if code_match:
+                code = code_match.group()
+
+                desc = line.replace(code, "").strip()
+                desc = re.sub(r'(الحالي|التاريخ)', '', desc)
+                desc = desc.strip()
+
+                if len(desc) < 3:
+                    continue
+
+                fault = {
+                    "system": current_system,
+                    "code": code,
+                    "desc": desc
+                }
+
+                data["faults"].append(fault)
+                last_fault = fault
+
+            else:
+                # 🔥 تكملة وصف
+                if last_fault and len(line) < 80 and not re.search(r'[PBCU]\d{4}', line):
+                    last_fault["desc"] += " " + line
+
+                # 🔥 اسم نظام
+                elif not any(x in line for x in [
+                    "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
+                ]):
+                    current_system = line.strip()
 
     return data
