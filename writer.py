@@ -137,64 +137,48 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
-def fill_system_tables(doc, systems_data):
+def fill_dtc_table(doc, dtc_list):
 
-    # 🔥 تطبيع المفاتيح أولاً
-    normalized_data = {}
+    table = doc.tables[1]  # جدول الأعطال
 
-    for key, value in systems_data.items():
-        fixed = normalize_system_name(key)
-        normalized_data.setdefault(fixed, []).extend(value)
+    # 🔥 تجميع الأعطال حسب النظام
+    grouped = {}
 
-    # ثم استخدم البيانات الجديدة
-    systems_data = normalized_data
+    for d in dtc_list:
+        system = d["system"]
 
-    system_order = ["HC", "ABS / VSC / TRAC", "SRS", "CM"]
-    display_names = {
-        "HC": "Hybrid Control",
-        "ABS / VSC / TRAC": "ABS / VSC / TRAC",
-        "SRS": "Airbag System",
-        "CM": "Communication Module"
-    }
+        if system not in grouped:
+            grouped[system] = []
 
-    tables = doc.tables
+        grouped[system].append(d)
 
-    for i, system_name in enumerate(system_order):
+    # 🔥 كتابة الجدول
+    for system, dtcs in grouped.items():
 
-        if i >= len(tables):
-            break
-
-        table = tables[i + 1]
-
-        dtcs = systems_data.get(system_name, [])
-
-        for idx, d in enumerate(dtcs):
+        for i, d in enumerate(dtcs):
             row = table.add_row().cells
 
-            # 🔥 اكتب اسم النظام فقط في أول صف
-            if idx == 0:
-                row[0].text = system_name
+            # ✅ اسم النظام مرة واحدة فقط
+            if i == 0:
+                row[0].text = system
             else:
                 row[0].text = ""
 
-            row[0].text = system_name if idx == 0 else ""
             row[1].text = d["code"]
             row[2].text = d["desc"]
 
-            # 🔥 تنسيق احترافي
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-            style_cell(row[1], bold=True)
+            # 🔥 تنسيق
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))
             style_cell(row[2])
-            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
 
-            # 🔥 توسيط الخلايا
             center_cell(row[0])
             center_cell(row[1])
             center_cell(row[2])
-# 🔹 تعبئة القالب
+
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
-    fill_system_tables(doc, data["systems"])
+    fill_dtc_table(doc, data["systems"])
     fill_ok_systems_table(doc, data["systems_ok"])
 
     replacements = {

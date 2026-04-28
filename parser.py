@@ -166,7 +166,7 @@ def parse(text):
             "test_time": "",
             "sn": ""
         },
-        "systems": {},
+        "systems": [],
         "systems_ok": []
     }
 
@@ -428,10 +428,12 @@ def parse(text):
             ]):
                 continue
             
-            if system not in data["systems"]:
-                data["systems"][system] = []
+            # 🔥 تأكد أن systems قائمة وليس dict
+            if not isinstance(data["systems"], list):
+                data["systems"] = []
 
-            data["systems"][system].append({
+            # ✅ إضافة مباشرة بدون تقسيم
+            data["systems"].append({
                 "system": system,
                 "code": code,
                 "desc": desc.strip()
