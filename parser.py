@@ -358,11 +358,7 @@ def parse(text):
             break
 
         # 🔍 استخراج الكود
-        # 🔥 استخراج الأنظمة من السطر
-        systems_found = re.findall(r'[A-Z]{2,5}', line)
-
-        if systems_found:
-            current_system = systems_found[-1]
+        
         raw_code = re.search(r'([PBCU][0-9A-Z]{4}|[0-9]\.[0-9A-Z]{4}[PBCU])', line)
 
         if raw_code:
