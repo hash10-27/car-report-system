@@ -62,22 +62,7 @@ def format_systems(systems):
 
     return "\n".join(systems)
 
-def normalize_system_name(name):
-    name = name.strip().upper()
 
-    if "HC" in name:
-        return "HC"
-
-    if any(x in name for x in ["ABS", "VSC", "TRAC"]):
-        return "ABS / VSC / TRAC"
-
-    if "SRS" in name:
-        return "SRS"
-
-    if "CM" in name:
-        return "CM"
-
-    return name
 def build_systems_text(systems):
 
     if not systems:
@@ -138,8 +123,6 @@ def style_cell(cell, bold=False, color=None):
                 run.font.color.rgb = color
 
 def fill_system_tables(doc, data):
-    print("DATA TYPE:", type(data))
-    print("DATA:", data)
 
     faults = data.get("faults", [])
 
@@ -186,6 +169,8 @@ def fill_system_tables(doc, data):
         center_cell(row[0])
         center_cell(row[1])
         center_cell(row[2])
+    print("DATA TYPE:", type(data))
+    print("DATA:", data)
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
