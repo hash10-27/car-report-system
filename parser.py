@@ -404,7 +404,6 @@ def parse(text):
                 code = code_match.group()
 
             if code:
-                code = code_match.group()
 
                 desc = line.replace(code, "").strip()
                 desc = re.sub(r'(الحالي|التاريخ)', '', desc)
@@ -432,7 +431,7 @@ def parse(text):
                     "DTC", "Present", "على ما يرام", "هذا التقرير", "LAUNCH", "بيانات"
                 ]):
                     current_system = line.strip()
-        print("LINE >>>", line)
-        print("CODE >>>", code)
+            print("LINE >>>", line)
+            print("CODE >>>", code)
 
     return data
