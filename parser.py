@@ -117,11 +117,9 @@ def fix_mileage(m):
 
 def fix_dtc(code):
     code = code.replace(".", "")
-    code = code[::-1]  # قلب
-    
-    # الآن بيصير مثل P0AA6
+    code = code[::-1]
+
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
-    
     return match.group(1) if match else code
 
 # ================================
@@ -356,6 +354,7 @@ def parse(text):
         if dtc_match:
             raw_code = dtc_match.group(1)
             code = fix_dtc(raw_code)
+            code = re.sub(r'\.\d+$', '', code)
 
             # 🔥 إذا الكود مقلوب (ينتهي بحرف مثل P B C U)
             if raw_code[-1] in "PBCU":
@@ -363,11 +362,19 @@ def parse(text):
             else:
                 code = raw_code
 
-            desc = line.split(dtc_match.group(0), 1)[-1].strip()
+            desc = line.split(raw_code, 1)[-1].strip()
 
-            # إصلاح الاتجاه
+            # 🔥 حذف كلمات مزعجة
+            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
+
+            # 🔥 حذف الأكواد المكررة داخل الوصف
+            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
+
+            # 🔥 قلب النص العربي
             if any('\u0600' <= c <= '\u06FF' for c in desc):
                 desc = desc[::-1]
+
+desc = desc.strip()
 
             if len(desc) < 3:
                 continue
@@ -386,16 +393,16 @@ def parse(text):
                     current_system = "OTHER"
 
             # دمج السطر التالي
-            if i + 1 < len(lines):
-                next_line = normalize_line(lines[i + 1])
+            #if i + 1 < len(lines):
+                #next_line = normalize_line(lines[i + 1])
 
-                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
-                    if not any(x in next_line for x in [
-                        "على ما يرام",
-                        "DTC",
-                        "الأنظمة"
-                    ]):
-                        desc += " " + next_line
+                #if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
+                    #if not any(x in next_line for x in [
+                       # "على ما يرام",
+                       # "DTC",
+                   #     "الأنظمة"
+                 #   ]):
+                       # desc += " " + next_line
 
             system = current_system
 
