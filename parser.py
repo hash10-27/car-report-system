@@ -337,6 +337,7 @@ def parse(text):
     last_fault = None
     in_dtc_section = False
 
+
     for line in lines:
 
         line = line.strip()
@@ -357,6 +358,11 @@ def parse(text):
             break
 
         # 🔍 استخراج الكود
+        # 🔥 استخراج الأنظمة من السطر
+        systems_found = re.findall(r'[A-Z]{2,5}', line)
+
+        if systems_found:
+            current_system = systems_found[-1]
         raw_code = re.search(r'([PBCU][0-9A-Z]{4}|[0-9]\.[0-9A-Z]{4}[PBCU])', line)
 
         if raw_code:
@@ -395,9 +401,8 @@ def parse(text):
                 last_fault["desc"] += " " + line
 
             # اسم نظام جديد
-            elif not any(x in line for x in [
-                "DTC", "Present", "هذا التقرير", "LAUNCH", "بيانات"
-            ]):
+            elif re.search(r'[A-Z]{2,5}$', line):
+                # 🔥 مثال: CH / ABS / SRS / BCM
                 current_system = line.strip()
         
         # ================================
