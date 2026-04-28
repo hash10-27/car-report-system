@@ -297,7 +297,7 @@ def parse(text):
                 # نأخذ أطول رقم (غالباً هو الصحيح)
                 value = max(numbers, key=len)
 
-                data["car_info"]["mileage"] = value
+                data["car_info"]["mileage"] = fix_number(value)
         # 👤 العميل
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
