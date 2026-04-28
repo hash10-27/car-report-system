@@ -375,10 +375,7 @@ def parse(text):
 
             # تحديد النظام
             # =========================
-            # 🔥 SYSTEM DETECTION FINAL
-            # =========================
-
-            # 1️⃣ من الكود (أساس)
+            # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
             if code.startswith("P"):
                 system = "HC"
 
@@ -386,29 +383,16 @@ def parse(text):
                 system = "ABS / VSC / TRAC"
 
             elif code.startswith("B"):
-                system = "BODY"
+                if code.startswith(("B15", "B16", "B17")):
+                    system = "CM"
+                else:
+                    system = "SRS"
 
             elif code.startswith("U"):
                 system = "NETWORK"
 
             else:
                 system = "OTHER"
-
-            # 2️⃣ override ذكي من النص
-            if "ABS" in line or "VSC" in line or "TRAC" in line:
-                system = "ABS / VSC / TRAC"
-
-            elif "SRS" in line:
-                system = "SRS"
-
-            elif "CM" in line:
-                system = "CM"
-
-            # 3️⃣ تصحيح B codes
-            if code.startswith("B"):
-                if system not in ["SRS", "CM"]:
-                    system = "SRS"   # default الأفضل
-
             # دمج السطر التالي
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
@@ -421,7 +405,8 @@ def parse(text):
                     ]):
                         desc += " " + next_line
 
-            system = current_system
+            # 🔥 لا تعتمد على current_system نهائياً
+            # استخدم system الذي حددناه من الكود
 
             if system not in data["systems"]:
                 data["systems"][system] = []
