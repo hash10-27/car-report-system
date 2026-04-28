@@ -374,17 +374,40 @@ def parse(text):
                 continue
 
             # تحديد النظام
-            if not current_system:
-                if code.startswith("P"):
-                    current_system = "HC"
-                elif code.startswith("C"):
-                    current_system = "ABS / VSC / TRAC"
-                elif code.startswith("B"):
-                    current_system = "SRS"
-                elif code.startswith("U"):
-                    current_system = "NETWORK"
-                else:
-                    current_system = "OTHER"
+            # =========================
+            # 🔥 SYSTEM DETECTION FINAL
+            # =========================
+
+            # 1️⃣ من الكود (أساس)
+            if code.startswith("P"):
+                system = "HC"
+
+            elif code.startswith("C"):
+                system = "ABS / VSC / TRAC"
+
+            elif code.startswith("B"):
+                system = "BODY"
+
+            elif code.startswith("U"):
+                system = "NETWORK"
+
+            else:
+                system = "OTHER"
+
+            # 2️⃣ override ذكي من النص
+            if "ABS" in line or "VSC" in line or "TRAC" in line:
+                system = "ABS / VSC / TRAC"
+
+            elif "SRS" in line:
+                system = "SRS"
+
+            elif "CM" in line:
+                system = "CM"
+
+            # 3️⃣ تصحيح B codes
+            if code.startswith("B"):
+                if system not in ["SRS", "CM"]:
+                    system = "SRS"   # default الأفضل
 
             # دمج السطر التالي
             if i + 1 < len(lines):
