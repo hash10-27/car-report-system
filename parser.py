@@ -401,51 +401,51 @@ def parse(text):
         # ================================
         if in_ok_section:
 
-        print("OK SECTION >>>", line)
+            print("OK SECTION >>>", line)
 
-        # 🔥 وقف أولاً
-        if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
-            break
+            # 🔥 وقف أولاً
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
+                break
 
-        clean_line = re.sub(r'^\d+\.', '', line).strip()
+            clean_line = re.sub(r'^\d+\.', '', line).strip()
 
-        print("RAW LINE >>>", repr(line))
+            print("RAW LINE >>>", repr(line))
 
-        # ❌ تجاهل الفارغ
-        if not clean_line:
-            continue
+            # ❌ تجاهل الفارغ
+            if not clean_line:
+                continue
 
-        # ❌ تجاهل النصوص غير المهمة
-        if re.search(r'تقرير|بيانات', clean_line):
-            continue
+            # ❌ تجاهل النصوص غير المهمة
+            if re.search(r'تقرير|بيانات', clean_line):
+                continue
 
-        # 🔥 حماية من index error
-        if i > 0 and "على ما يرام" in lines[i-1]:
-            pass
+            # 🔥 حماية من index error
+            if i > 0 and "على ما يرام" in lines[i-1]:
+                pass
 
-        clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
+            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
-        print("CLEAN LINE >>>", repr(clean_line))
+            print("CLEAN LINE >>>", repr(clean_line))
 
-        # ❌ تجاهل الطويل جدًا
-        if len(clean_line) > 100:
-            continue
+            # ❌ تجاهل الطويل جدًا
+            if len(clean_line) > 100:
+                continue
 
-        # ❌ تجاهل الجمل العشوائية
-        if len(clean_line) < 3:
-            continue
+            # ❌ تجاهل الجمل العشوائية
+            if len(clean_line) < 3:
+                continue
 
-        if len(re.findall(r'\d', clean_line)) > 3:
-            continue
+            if len(re.findall(r'\d', clean_line)) > 3:
+                continue
 
-        if re.search(r'[PBCU]\d{4}', clean_line):
-            continue
+            if re.search(r'[PBCU]\d{4}', clean_line):
+                continue
 
-        if any(x in clean_line for x in [
-            "هذا التقرير",
-            "LAUNCH"
-        ]):
-            continue
+            if any(x in clean_line for x in [
+                "هذا التقرير",
+                "LAUNCH"
+            ]):
+                continue
 
-        # ✅ إضافة النظام
-        data["systems_ok"].append(clean_line)
+            # ✅ إضافة النظام
+            data["systems_ok"].append(clean_line)
