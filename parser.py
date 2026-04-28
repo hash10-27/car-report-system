@@ -332,6 +332,7 @@ def parse(text):
 
         current_system = ""
         last_fault = None
+        dtc_match = None
 
         for i, line in enumerate(lines):
 
