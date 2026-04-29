@@ -140,6 +140,7 @@ def extract_raw_dtc_block(text):
     return "\n".join(result)
 
 def fill_system_tables(doc, faults_raw):
+    print("🔥 ENTER fill_system_tables")
     import re
 
     table = doc.tables[1]  # تأكد أنه جدول الأعطال
