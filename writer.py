@@ -94,7 +94,21 @@ def build_systems_text(systems):
         for d in dtcs:
             text += f"{system} | {d['code']} | {d['desc']}\n"
 
-    return text
+    return textdef build_systems_text(systems):
+
+    if not systems:
+        return "لا يوجد أعطال"
+
+    text = ""
+
+    for system, dtcs in systems.items():
+
+        text += f"\n{system}\n"
+
+        for d in dtcs:
+            text += f"{d['code']} {d['desc']}\n"
+
+    return text.strip()
 
 def fill_ok_systems_table(doc, systems_ok):
 
@@ -194,7 +208,6 @@ def fill_system_tables(doc, systems_data):
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
-    fill_system_tables(doc, data["systems"])
     fill_ok_systems_table(doc, data["systems_ok"])
 
     replacements = {
