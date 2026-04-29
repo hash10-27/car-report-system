@@ -139,39 +139,74 @@ def extract_raw_dtc_block(text):
 
     return "\n".join(result)
 
-def fill_system_tables(doc, data):
+def fill_system_tables(doc, faults_raw):
 
-    # 🔥 تطبيع المفاتيح أولاً
-    normalized_data = {}
+    import re
 
-    # ثم استخدم البيانات الجديدة
-    systems_data = normalized_data
+    table = doc.tables[0]  # اختر الجدول المناسب
 
-    for i, system_name in enumerate(system_order):
+    ignore_words = ["DTC", "Present", "الحالي", "التاريخ"]
 
-        if i >= len(tables):
+    capture = False
+    seen = set()  # لمنع التكرار
+
+    for line in faults_raw.splitlines():
+
+        line = line.strip()
+
+        # 🔥 بداية الالتقاط
+        if "النظام الثاني غير طبيعي" in line:
+            capture = True
+
+        # 🔥 التوقف
+        if "الأنظمة التالية على ما يرام" in line:
             break
 
-        table = tables[i + 1]
+        if not capture:
+            continue
 
-        faults = data.get("faults_raw", [])
-        for line in faults:
+        # 🔥 حذف الكلمات غير المرغوبة
+        for word in ignore_words:
+            line = line.replace(word, "")
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        # 🔥 عنوان (بدون كود)
+        if not re.search(r'[PCBU]\d{4}', line):
             row = table.add_row().cells
-
-            row[0].text = line   # النص كامل
+            row[0].text = line
             row[1].text = ""
             row[2].text = ""
-            
+            continue
+
+        # 🔥 تقسيم الأعطال
+        split_faults = re.split(r'(?=[PCBU]\d{4})', line)
+
+        for fault in split_faults:
+            fault = fault.strip()
+
+            if not fault or fault in seen:
+                continue
+
+            seen.add(fault)
+
+            row = table.add_row().cells
+            row[0].text = fault
+            row[1].text = ""
+            row[2].text = ""
             # 🔥 تنسيق احترافي
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-            style_cell(row[1], bold=True)
-            style_cell(row[2])
-            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+            #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
+            #style_cell(row[1], bold=True)
+            #style_cell(row[2])
+            #style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
 
             # 🔥 توسيط الخلايا
-            center_cell(row[0])
-            center_cell(row[1])
-            center_cell(row[2])
+            #center_cell(row[0])
+            #center_cell(row[1])
+            #center_cell(row[2])
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
