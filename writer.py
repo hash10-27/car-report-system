@@ -154,47 +154,37 @@ def fill_system_tables(doc, faults_raw):
 
         line = line.strip()
 
-        # 🔥 بداية الالتقاط
-        if "النظام الثاني غير طبيعي" in line:
-            capture = True
-
-        # 🔥 التوقف
-        if "الأنظمة التالية على ما يرام" in line:
-            break
-
-        if not capture:
+        if not line:
             continue
 
-        # 🔥 حذف الكلمات غير المرغوبة
-        for word in ignore_words:
-            line = line.replace(word, "")
+        # 🔥 تجاهل فقط سطور غير مفيدة
+        if any(x in line for x in ["DTC", "الحالي", "التاريخ"]):
+            line = re.sub(r'(DTC|الحالي|التاريخ)', '', line)
 
         line = line.strip()
 
         if not line:
             continue
 
-        # 🔥 عنوان (بدون كود)
+        # 🔥 إذا عنوان (ما فيه كود)
         if not re.search(r'[PCBU]\d{4}', line):
             row = table.add_row().cells
-            row[0].text = line
+            row[0].text = f"🔹 {line}"
             row[1].text = ""
             row[2].text = ""
             continue
 
         # 🔥 تقسيم الأعطال
-        split_faults = re.split(r'(?=[PCBU]\d{4})', line)
+        parts = re.split(r'(?=[PCBU]\d{4})', line)
 
-        for fault in split_faults:
-            fault = fault.strip()
+        for part in parts:
+            part = part.strip()
 
-            if not fault or fault in seen:
+            if not part:
                 continue
 
-            seen.add(fault)
-
             row = table.add_row().cells
-            row[0].text = fault
+            row[0].text = part
             row[1].text = ""
             row[2].text = ""
             # 🔥 تنسيق احترافي
