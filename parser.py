@@ -275,12 +275,17 @@ def parse(text):
                     data["systems_ok"].append(s)
 
         # 🔥 بداية قسم الأعطال
+        # 🔥 بداية الأعطال
         if "رمز" in line and "خطأ" in line:
             in_dtc_section = True
+            in_ok_section = False
             continue
 
+        # 🔥 بداية الأنظمة السليمة
         if "على ما يرام" in line:
             in_ok_section = True
+            in_dtc_section = False
+            continue
              # 🔥 أضف هذا مباشرة هنا
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
