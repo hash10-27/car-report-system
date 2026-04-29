@@ -197,6 +197,9 @@ def extract_faults_raw(text):
             result.append(part)
 
     return result
+def is_mostly_arabic(text):
+    arabic = sum(1 for c in text if '\u0600' <= c <= '\u06FF')
+    return arabic > len(text) * 0.6
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -207,7 +210,7 @@ def parse(text):
         line = normalize_line(line)
 
         # قلب مرة واحدة فقط
-        if any('\u0600' <= c <= '\u06FF' for c in line):
+        if not is_mostly_arabic(line):
             line = line[::-1]
 
         lines.append(line)
@@ -402,11 +405,6 @@ def parse(text):
         # 🔥 الأعطال (بدون section)
         # ================================
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
-        # 🔥 اكتشاف اسم النظام
-        if not dtc_match:
-            if len(line) < 60 and not any(x in line for x in ["DTC", "الحالي", "التاريخ"]):
-                current_system = line
-            continue
        
         if dtc_match:
             raw_code = dtc_match.group(1)
@@ -465,8 +463,7 @@ def parse(text):
 
             data["dtc"].append({
                 "code": code,
-                "desc": desc.strip(),
-                "system": current_system
+                "desc": desc.strip()
             })
         print("LINE >>>", line)
         print("MATCH >>>", dtc_match)
