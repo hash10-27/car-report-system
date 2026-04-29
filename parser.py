@@ -127,23 +127,6 @@ def fix_number(value):
         return value
     return value[::-1]
 
-def is_header_line(line):
-    headers = [
-        "⚠️", "الأعطال", "DTC",
-        "النظام", "الكود", "الوصف",
-        "رمز", "خطأ"
-    ]
-
-    # إذا السطر قصير وغالباً عنوان
-    if len(line.strip()) <= 12 and any(h in line for h in headers):
-        return True
-
-    # DTC رقم (مثل DTC 1)
-    if re.match(r'^DTC\s*\d+', line):
-        return True
-
-    return False
-
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -224,40 +207,7 @@ def parse(text):
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
-        # ❌ تجاهل العناوين
-        if is_header_line(line):
-            continue
-        # 🔥 قلب السطر إذا عربي         next_line = normalize_line(lines[i + 1])
-
-            # ❌ لا تدمج إذا سطر فاضي
-            if not next_line:
-                pass
-
-            # ❌ لا تدمج إذا فيه كود جديد
-            elif re.search(r'[PBCU][0-9A-Z]{4}', next_line):
-                pass
-
-            # ❌ لا تدمج إذا فيه اسم نظام
-            elif re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', next_line):
-                pass
-
-            # ❌ لا تدمج إذا بداية قسم
-            elif any(x in next_line for x in [
-                "الأنظمة التالية",
-                "على ما يرام",
-                "النظام التالي",
-                "DTC",
-                "قبل الإصلاح"
-            ]):
-                pass
-
-            # ❌ لا تدمج إذا السطر قصير جداً (غالباً عنوان)
-            elif len(next_line) < 4:
-                pass
-
-            # ✅ فقط هنا ندمج (وصف حقيقي)
-            else:
-                desc += " " + next_line
+        # 🔥 قلب السطر إذا عربي
 
         # 🔥 إصلاح الأرقام (ترجع 4102 → 2014)
         import re
@@ -275,17 +225,12 @@ def parse(text):
                     data["systems_ok"].append(s)
 
         # 🔥 بداية قسم الأعطال
-        # 🔥 بداية الأعطال
         if "رمز" in line and "خطأ" in line:
             in_dtc_section = True
-            in_ok_section = False
             continue
 
-        # 🔥 بداية الأنظمة السليمة
         if "على ما يرام" in line:
             in_ok_section = True
-            in_dtc_section = False
-            continue
              # 🔥 أضف هذا مباشرة هنا
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
@@ -383,129 +328,125 @@ def parse(text):
                 data["meta"]["sn"] = fix_number(sn.group())
 
         # 🔥 اكتشاف اسم النظام من السطر
-        # ====================================
-    # 🔥 معالجة الأعطال (مرة واحدة فقط)
-    # ====================================
-    data["faults"] = []
+        system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
 
-    current_system = ""
-    last_fault = None
-    in_dtc_section = False
+        clean_line = line.replace(" ", "")
 
+        # 🔥 اكتشاف النظام بشكل قوي
+        if "HC" in clean_line:
+            current_system = "HC"
 
-    for line in lines:
+        elif "ABS" in clean_line:
+            current_system = "ABS / VSC / TRAC"
 
-        line = line.strip()
-        if not line:
-            continue
+        elif "VSC" in clean_line:
+            current_system = "VSC"
 
-        # 🔥 بداية قسم الأعطال
-        if "رمز" in line:
-            in_dtc_section = True
-            continue
+        elif "TRAC" in clean_line:
+            current_system = "TRAC"
 
-        # ❌ تجاهل أي شيء قبل قسم الأعطال
-        if not in_dtc_section:
-            continue
+        elif "SRS" in clean_line:
+            current_system = "SRS"
 
-        # 🔥 نهاية القسم
-        if i + 1 < len(lines):
-            next_line = normalize_line(lines[i + 1])
+        elif "CM" in clean_line:
+            current_system = "CM"
 
-            # ❌ لا تدمج إذا سطر فاضي
-            if not next_line:
-                pass
+        # ================================
+        # 🔥 الأعطال (بدون section)
+        # ================================
+        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
 
-            # ❌ لا تدمج إذا فيه كود جديد
-            elif re.search(r'[PBCU][0-9A-Z]{4}', next_line):
-                pass
+        if dtc_match:
+            raw_code = dtc_match.group(1)
+            code = fix_dtc(raw_code)
+            code = re.sub(r'\.\d+$', '', code)
 
-            # ❌ لا تدمج إذا فيه اسم نظام
-            elif re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', next_line):
-                pass
+            desc = line.split(raw_code, 1)[-1].strip()
 
-            # ❌ لا تدمج إذا بداية قسم
-            elif any(x in next_line for x in [
-                "الأنظمة التالية",
-                "على ما يرام",
-                "النظام التالي",
-                "DTC",
-                "قبل الإصلاح"
-            ]):
-                pass
+            # 🔥 حذف كلمات مزعجة
+            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
 
-            # ❌ لا تدمج إذا السطر قصير جداً (غالباً عنوان)
-            elif len(next_line) < 4:
-                pass
+            # 🔥 حذف الأكواد المكررة داخل الوصف
+            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
 
-            # ✅ فقط هنا ندمج (وصف حقيقي)
-            else:
-                desc += " " + next_line
+            # 🔥 قلب النص العربي
+            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
+            desc = desc.strip()
 
-        # 🔍 استخراج الكود
-        elif (
-            # يحتوي حروف كبيرة (رمز النظام)
-            re.search(r'[A-Z]{2,5}', line)
-
-            # ويحتوي نص عربي (اسم النظام)
-            and re.search(r'[\u0600-\u06FF]', line)
-
-            # ليس سطر كود
-            and not re.search(r'[PBCU]\d{4}', line)
-
-            # ليس وصف عطل
-            and "خطأ" not in line
-
-            # ليس جزء من وصف الوسادة LH / HL
-            and not re.fullmatch(r'(LH|RH|HL)', line.strip())
-
-            # ليس رقم أو garbage
-            and len(line.strip()) > 5
-        ):
-            current_system = line.strip()
-        raw_code = re.search(r'([PBCU][0-9A-Z]{4}|[0-9]\.[0-9A-Z]{4}[PBCU])', line)
-
-        if raw_code:
-            raw = raw_code.group()
-
-            # 🔥 إذا كان طبيعي
-            if re.match(r'[PBCU]\d{4}', raw):
-                code = raw
-
-            # 🔥 إذا كان مقلوب مثل 1.6AA0P
-            else:
-                raw = raw.replace(".", "")
-                code = raw[::-1]
-        else:
-            code = None
-
-        if code:
-            desc = line.replace(code, "").strip()
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc).strip()
+            desc = desc.strip()
 
             if len(desc) < 3:
                 continue
 
-            fault = {
-                "system": current_system,
+            # تحديد النظام
+            # =========================
+            # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
+            if code.startswith("P"):
+                system = "HC"
+
+            elif code.startswith("C"):
+                system = "ABS / VSC / TRAC"
+
+            elif code.startswith("B"):
+                if code.startswith(("B15", "B16", "B17")):
+                    system = "CM"
+                else:
+                    system = "SRS"
+
+            elif code.startswith("U"):
+                system = "NETWORK"
+
+            else:
+                system = "OTHER"
+            # دمج السطر التالي
+            if i + 1 < len(lines):
+                next_line = normalize_line(lines[i + 1])
+
+                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
+                    if not any(x in next_line for x in [
+                        "على ما يرام",
+                        "DTC",
+                        "الأنظمة"
+                    ]):
+                        desc += " " + next_line
+
+            # 🔥 لا تعتمد على current_system نهائياً
+            # استخدم system الذي حددناه من الكود
+            # ❌ تجاهل نصوص ليست أعطال
+            desc = re.split(r'إ.?خل.?اء', desc)[0]
+            desc = desc.strip()
+            
+            if any(x in desc for x in [
+                "إخلاء",
+                "المسؤولية",
+                "هذا التقرير",
+                "لا تتحمل",
+                "أي مسؤولية",
+                "LAUNCH",
+                "بيانات",
+                "service",
+            ]):
+                continue
+            
+            if system not in data["systems"]:
+                data["systems"][system] = []
+
+            data["systems"][system].append({
+                "system": system,
                 "code": code,
-                "desc": desc
-            }
+                "desc": desc.strip()
+            })
+        print("LINE >>>", line)
+        print("MATCH >>>", dtc_match)
 
-            data["faults"].append(fault)
-            last_fault = fault
-
-        else:
-            # تكملة وصف
-            if last_fault and len(line) < 80:
-                last_fault["desc"] += " " + line
-
-        
         # ================================
         # ✅ الأنظمة السليمة
         # ================================
         if in_ok_section:
             print("OK SECTION >>>", line)
+            # ❌ تجاهل نصوص غير أنظمة
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
+                continue
 
             # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
             if "على ما يرام" in lines[i-1]:
@@ -514,7 +455,7 @@ def parse(text):
             print("RAW LINE >>>", repr(line))  # 👈 هنا
 
             # وقف عند نهاية التقرير
-            if "إخلاء المسؤولية" in line:
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
                 break
 
             # تنظيف
@@ -525,11 +466,12 @@ def parse(text):
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
                 continue
+            
+            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
-            if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
-                data["systems_ok"].append(clean_line)
-                continue
+
+            # باقي الشروط...
 
             # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
             # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
@@ -546,6 +488,7 @@ def parse(text):
 
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
-        
+
+        print("FINAL DATA >>>", data)
 
     return data

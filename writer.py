@@ -62,7 +62,22 @@ def format_systems(systems):
 
     return "\n".join(systems)
 
+def normalize_system_name(name):
+    name = name.strip().upper()
 
+    if "HC" in name:
+        return "HC"
+
+    if any(x in name for x in ["ABS", "VSC", "TRAC"]):
+        return "ABS / VSC / TRAC"
+
+    if "SRS" in name:
+        return "SRS"
+
+    if "CM" in name:
+        return "CM"
+
+    return name
 def build_systems_text(systems):
 
     if not systems:
@@ -122,58 +137,64 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
-def fill_system_tables(doc, data):
+def fill_system_tables(doc, systems_data):
 
-    faults = data.get("faults", [])
+    # 🔥 تطبيع المفاتيح أولاً
+    normalized_data = {}
 
-    if not faults:
-        return
+    for key, value in systems_data.items():
+        fixed = normalize_system_name(key)
+        normalized_data.setdefault(fixed, []).extend(value)
 
-    table = doc.tables[1]
+    # ثم استخدم البيانات الجديدة
+    systems_data = normalized_data
 
-    current_system = None
+    system_order = ["HC", "ABS / VSC / TRAC", "SRS", "CM"]
+    display_names = {
+        "HC": "Hybrid Control",
+        "ABS / VSC / TRAC": "ABS / VSC / TRAC",
+        "SRS": "Airbag System",
+        "CM": "Communication Module"
+    }
 
-    for f in faults:
+    tables = doc.tables
 
-        system = f["system"]
-        code = f["code"]
-        desc = f["desc"]
+    for i, system_name in enumerate(system_order):
 
-        # 🔥 إذا تغير النظام → أضف عنوان
-        if system != current_system:
-            current_system = system
+        if i >= len(tables):
+            break
 
+        table = tables[i + 1]
+
+        dtcs = systems_data.get(system_name, [])
+
+        for idx, d in enumerate(dtcs):
             row = table.add_row().cells
-            row[0].text = system
-            row[1].text = ""
-            
-            # تنسيق العنوان
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+
+            # 🔥 اكتب اسم النظام فقط في أول صف
+            if idx == 0:
+                row[0].text = system_name
+            else:
+                row[0].text = ""
+
+            row[0].text = system_name if idx == 0 else ""
+            row[1].text = d["code"]
+            row[2].text = d["desc"]
+
+            # 🔥 تنسيق احترافي
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
+            style_cell(row[1], bold=True)
+            style_cell(row[2])
+            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+
+            # 🔥 توسيط الخلايا
             center_cell(row[0])
-
-        # 🔥 إضافة العطل تحته
-        row = table.add_row().cells
-        row[0].text = system      # اسم النظام
-        row[1].text = code        # الكود
-        row[2].text = desc        # الوصف
-
-        style_cell(row[0])
-        center_cell(row[0])
-
-        # 🔥 تنسيق احترافي
-        style_cell(row[0], bold=True)
-        style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))
-        style_cell(row[2])
-        # 🔥 توسيط الخلايا
-        center_cell(row[0])
-        center_cell(row[1])
-        center_cell(row[2])
-    print("DATA TYPE:", type(data))
-    print("DATA:", data)
+            center_cell(row[1])
+            center_cell(row[2])
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
-    fill_system_tables(doc, data)
+    fill_system_tables(doc, data["systems"])
     fill_ok_systems_table(doc, data["systems_ok"])
 
     replacements = {
