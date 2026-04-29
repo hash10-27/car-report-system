@@ -227,6 +227,8 @@ def fill_template(template_path, output_path, data):
 
     for key, value in replacements.items():
         replace_all(doc, key, str(value))
+        
+    fill_system_tables(doc, data["faults_raw"])
 
     # 🔥 تنسيق جدول معلومات السيارة
     table = doc.tables[0]  # أول جدول (حق معلومات السيارة)
