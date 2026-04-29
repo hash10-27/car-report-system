@@ -204,7 +204,7 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
- #data["systems_ok"] = extract_ok_systems_block(text)
+    #data["systems_ok"] = extract_ok_systems_block(text)
     for i, line in enumerate(lines):
         line = normalize_line(line)
         # 🔥 قلب السطر إذا عربي

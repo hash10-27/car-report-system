@@ -46,10 +46,12 @@ def center_cell(cell):
 # 🔹 تحويل قائمة DTC إلى نص مرتب
 def fill_dtc_table(doc, dtc_list):
 
-    if i + 1 >= len(tables):
-        continue
+    tables = doc.tables
 
-    table = tables[i + 1] # أول جدول في القالب
+    if len(tables) < 2:
+        return  # ❌ لا يوجد جدول كافي
+
+    table = tables[1]  # الجدول الثاني
 
     for d in dtc_list:
         row_cells = table.add_row().cells
@@ -186,7 +188,7 @@ def fill_system_tables(doc, systems_data):
 
     for i, system_name in enumerate(system_order):
 
-        if i >= len(tables):
+        if i + 1 >= len(tables):
             break
 
         table = tables[i + 1]
