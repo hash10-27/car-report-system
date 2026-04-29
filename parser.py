@@ -127,7 +127,22 @@ def fix_number(value):
         return value
     return value[::-1]
 
+def is_header_line(line):
+    headers = [
+        "⚠️", "الأعطال", "DTC",
+        "النظام", "الكود", "الوصف",
+        "رمز", "خطأ"
+    ]
 
+    # إذا السطر قصير وغالباً عنوان
+    if len(line.strip()) <= 12 and any(h in line for h in headers):
+        return True
+
+    # DTC رقم (مثل DTC 1)
+    if re.match(r'^DTC\s*\d+', line):
+        return True
+
+    return False
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -209,7 +224,40 @@ def parse(text):
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
-        # 🔥 قلب السطر إذا عربي
+        # ❌ تجاهل العناوين
+        if is_header_line(line):
+            continue
+        # 🔥 قلب السطر إذا عربي         next_line = normalize_line(lines[i + 1])
+
+            # ❌ لا تدمج إذا سطر فاضي
+            if not next_line:
+                pass
+
+            # ❌ لا تدمج إذا فيه كود جديد
+            elif re.search(r'[PBCU][0-9A-Z]{4}', next_line):
+                pass
+
+            # ❌ لا تدمج إذا فيه اسم نظام
+            elif re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', next_line):
+                pass
+
+            # ❌ لا تدمج إذا بداية قسم
+            elif any(x in next_line for x in [
+                "الأنظمة التالية",
+                "على ما يرام",
+                "النظام التالي",
+                "DTC",
+                "قبل الإصلاح"
+            ]):
+                pass
+
+            # ❌ لا تدمج إذا السطر قصير جداً (غالباً عنوان)
+            elif len(next_line) < 4:
+                pass
+
+            # ✅ فقط هنا ندمج (وصف حقيقي)
+            else:
+                desc += " " + next_line
 
         # 🔥 إصلاح الأرقام (ترجع 4102 → 2014)
         import re
@@ -356,8 +404,38 @@ def parse(text):
             continue
 
         # 🔥 نهاية القسم
-        if "على ما يرام" in line or "إخلاء المسؤولية" in line:
-            break
+        if i + 1 < len(lines):
+            next_line = normalize_line(lines[i + 1])
+
+            # ❌ لا تدمج إذا سطر فاضي
+            if not next_line:
+                pass
+
+            # ❌ لا تدمج إذا فيه كود جديد
+            elif re.search(r'[PBCU][0-9A-Z]{4}', next_line):
+                pass
+
+            # ❌ لا تدمج إذا فيه اسم نظام
+            elif re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', next_line):
+                pass
+
+            # ❌ لا تدمج إذا بداية قسم
+            elif any(x in next_line for x in [
+                "الأنظمة التالية",
+                "على ما يرام",
+                "النظام التالي",
+                "DTC",
+                "قبل الإصلاح"
+            ]):
+                pass
+
+            # ❌ لا تدمج إذا السطر قصير جداً (غالباً عنوان)
+            elif len(next_line) < 4:
+                pass
+
+            # ✅ فقط هنا ندمج (وصف حقيقي)
+            else:
+                desc += " " + next_line
 
         # 🔍 استخراج الكود
         elif (
