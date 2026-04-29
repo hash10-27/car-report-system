@@ -133,6 +133,8 @@ def extract_faults_raw(text):
 
     for line in lines:
         line = line.strip()
+        # إصلاح المسافات الغريبة من PDF
+        line = re.sub(r'\s+', ' ', line)
         if not line:
             continue
 
@@ -157,6 +159,25 @@ def extract_faults_raw(text):
             continue
 
         # 🔥 إذا عنوان (ما فيه كود)
+        # 🔥 تعريف العناوين المهمة
+        is_header = any(x in line for x in [
+            "المحرك",
+            "EOBD",
+            "GEN",
+            "النظام",
+            "غير طبيعي",
+            "الرصاص",
+            "التحكم",
+            "مقياس",
+            "تثبيت",
+        ])
+
+        # 🔥 إذا عنوان → أضفه مباشرة
+        if is_header:
+            result.append(line)
+            continue
+
+        # 🔥 إذا لا يحتوي كود → غالباً عنوان أيضاً (لكن نحميه)
         if not re.search(r'[PCBU][0-9A-Z]{4}', line):
             result.append(line)
             continue
