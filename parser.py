@@ -323,29 +323,6 @@ def parse(text):
             if sn:
                 data["meta"]["sn"] = sn.group()
 
-        # 🔥 اكتشاف اسم النظام من السطر
-        system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
-
-        clean_line = line.replace(" ", "")
-
-        # 🔥 اكتشاف النظام بشكل قوي
-        if "HC" in clean_line:
-            current_system = "HC"
-
-        elif "ABS" in clean_line:
-            current_system = "ABS / VSC / TRAC"
-
-        elif "VSC" in clean_line:
-            current_system = "VSC"
-
-        elif "TRAC" in clean_line:
-            current_system = "TRAC"
-
-        elif "SRS" in clean_line:
-            current_system = "SRS"
-
-        elif "CM" in clean_line:
-            current_system = "CM"
 
         # ================================
         # 🔥 الأعطال (بدون section)
@@ -377,23 +354,6 @@ def parse(text):
             # تحديد النظام
             # =========================
             # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
-            if code.startswith("P"):
-                system = "HC"
-
-            elif code.startswith("C"):
-                system = "ABS / VSC / TRAC"
-
-            elif code.startswith("B"):
-                if code.startswith(("B15", "B16", "B17")):
-                    system = "CM"
-                else:
-                    system = "SRS"
-
-            elif code.startswith("U"):
-                system = "NETWORK"
-
-            else:
-                system = "OTHER"
             # دمج السطر التالي
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])

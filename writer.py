@@ -62,22 +62,6 @@ def format_systems(systems):
 
     return "\n".join(systems)
 
-def normalize_system_name(name):
-    name = name.strip().upper()
-
-    if "HC" in name:
-        return "HC"
-
-    if any(x in name for x in ["ABS", "VSC", "TRAC"]):
-        return "ABS / VSC / TRAC"
-
-    if "SRS" in name:
-        return "SRS"
-
-    if "CM" in name:
-        return "CM"
-
-    return name
 
 def build_systems_text(systems):
 
