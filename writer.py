@@ -46,7 +46,10 @@ def center_cell(cell):
 # 🔹 تحويل قائمة DTC إلى نص مرتب
 def fill_dtc_table(doc, dtc_list):
 
-    table = doc.tables[i + 1] # أول جدول في القالب
+    if i + 1 >= len(tables):
+        continue
+
+    table = tables[i + 1] # أول جدول في القالب
 
     for d in dtc_list:
         row_cells = table.add_row().cells
@@ -98,32 +101,54 @@ def build_systems_text(systems):
 
 def fill_ok_systems_table(doc, systems_ok):
 
-    # 📌 اختر الجدول المناسب (مثلاً آخر جدول)
     table = doc.tables[-1]
+
+    added = set()  # 🔥 منع التكرار
 
     for system in systems_ok:
 
-        # ❌ فلتر نهائي
+        if not system:
+            continue
+
+        system = system.strip()
+
+        # ❌ تجاهل garbage
         if any(x in system for x in [
-            "إخلاء المسؤولية",
-            "هذا التقرير",
-            "بيانات",
-            "LAUNCH"
+            "إخلاء", "مسؤولية", "تقرير", "بيانات",
+            "DTC", "الحالي", "التاريخ"
         ]):
             continue
 
+        # ❌ تجاهل السطور الطويلة (OCR خراب)
+        if len(system) > 80:
+            continue
+
+        # 🔥 إزالة الترقيم
+        system = re.sub(r'^\d+\.', '', system).strip()
+
+        # 🔥 تنظيف تكرار EOBD
+        system = re.sub(r'(EOBD)+', 'EOBD', system)
+
+        # ❌ تجاهل إذا فاضي بعد التنظيف
+        if not system:
+            continue
+
+        # 🔥 منع التكرار
+        if system in added:
+            continue
+
+        added.add(system)
+
+        # ✅ إضافة صف
         row = table.add_row().cells
-
-        clean_name = re.sub(r'^\d+\.', '', system).strip()
-
-        row[0].text = clean_name
+        row[0].text = system
         row[1].text = "✔"
 
-          # تنسيق
+        # 🎨 تنسيق
         style_cell(row[0])
         style_cell(row[1], bold=True, color=RGBColor(0, 150, 0))
 
-        # 🔥 توسيط
+        # 📌 توسيط
         for cell in row:
             for p in cell.paragraphs:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -213,7 +238,7 @@ def fill_template(template_path, output_path, data):
         "{app_version}": data["meta"]["app_version"],
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
-        "{systems_ok}": "\n".join(data["systems_ok"]),
+        #"{systems_ok}": "\n".join(data["systems_ok"]),
         "{systems}": build_systems_text(data["systems"])
     }
 
