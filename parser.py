@@ -196,7 +196,8 @@ def parse(text):
     # 🔍 تحليل سطر بسطر
     # ====================================
     in_ok_section = False
-    in_dtc_block = False
+    current_system = None
+    in_dtc_section = False
     
 
     for i, line in enumerate(lines):
@@ -326,95 +327,20 @@ def parse(text):
         # 🔥 الأعطال (بدون section)
         # ================================
         # ================================
-        # 🔥 نسخ الأعطال كما هي (RAW)
+        # 🔥 RAW DTC (بدون أي تحليل)
         # ================================
+        if "dtc_raw" not in data:
+            data["dtc_raw"] = ""
 
-        # بداية قسم الأعطال
-        if "رمز" in line and "خطأ" in line:
-            in_dtc_block = True
-            continue
+        # 🔥 حذف الكلمات فقط
+        clean_line = line.replace("DTC", "")
+        clean_line = clean_line.replace("الحالي", "")
+        clean_line = clean_line.replace("التاريخ", "")
 
-        # نهاية القسم
-        if "على ما يرام" in line:
-            in_dtc_block = False
-            continue
-
-        if in_dtc_block:
-            clean_line = line.strip()
-
-            if not clean_line:
-                continue
-
-            # تجاهل الحشو فقط
-            if any(x in clean_line for x in [
-                "إخلاء",
-                "المسؤولية",
-                "هذا التقرير",
-                "LAUNCH"
-            ]):
-                continue
-
-            # 🔥 أهم سطر
-            data["dtc_raw"].append(clean_line)
-
-            continue
-
-            desc = line.split(raw_code, 1)[-1].strip()
-
-            # 🔥 حذف كلمات مزعجة
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-
-            # 🔥 حذف الأكواد المكررة داخل الوصف
-            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
-
-            # 🔥 قلب النص العربي
-            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
-            desc = desc.strip()
-
-            desc = desc.strip()
-
-            if len(desc) < 3:
-                continue
-
-            # دمج السطر التالي
-            if i + 1 < len(lines):
-                next_line = normalize_line(lines[i + 1])
-
-                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
-                    if not any(x in next_line for x in [
-                        "على ما يرام",
-                        "DTC",
-                        "الأنظمة"
-                    ]):
-                        desc += " " + next_line
-
-            # 🔥 لا تعتمد على current_system نهائياً
-            # استخدم system الذي حددناه من الكود
-            # ❌ تجاهل نصوص ليست أعطال
-            desc = re.split(r'إ.?خل.?اء', desc)[0]
-            desc = desc.strip()
-            
-            if any(x in desc for x in [
-                "إخلاء",
-                "المسؤولية",
-                "هذا التقرير",
-                "لا تتحمل",
-                "أي مسؤولية",
-                "LAUNCH",
-                "بيانات",
-                "service",
-            ]):
-                continue
-            
-            if "dtc" not in data:
-                data["dtc"] = []
-
-            data["dtc"].append({
-                "code": code,
-                "desc": desc.strip()
-            })
-            print("LINE >>>", line)
-            print("MATCH >>>", dtc_match)
+        # 🔥 إضافة السطر كما هو
+        data["dtc_raw"] += clean_line + " "
+                print("LINE >>>", line)
+                print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
