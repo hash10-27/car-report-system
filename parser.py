@@ -121,7 +121,47 @@ def fix_dtc(code):
 
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
     return match.group(1) if match else code
+def extract_faults_raw(text):
+    import re
 
+    # 🔥 تنظيف النص
+    text = re.sub(r'[\u200e\u200f\u202a-\u202e]', '', text)
+
+    lines = text.split("\n")
+
+    start = False
+    result = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # 🔥 بداية القسم
+        if "غير طبيعي" in line:
+            start = True
+            continue
+
+        # 🔥 نهاية القسم
+        if "على ما يرام" in line:
+            break
+
+        if not start:
+            continue
+
+        # ❌ تجاهل الكلمات غير المطلوبة
+        if any(x.lower() in line.lower() for x in [
+            "dtc", "present", "الحالي", "التاريخ"
+        ]):
+            continue
+
+        # 🔥 تنظيف أرقام الترتيب (1. 2. 3.)
+        line = re.sub(r'^\d+\.', '', line).strip()
+
+        # 🔥 أضف السطر كما هو
+        result.append(line)
+
+    return result
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -326,20 +366,67 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        # ================================
-        # 🔥 RAW DTC (بدون أي تحليل)
-        # ================================
-        if "dtc_raw" not in data:
-            data["dtc_raw"] = ""
+        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
+       
+        if dtc_match:
+            raw_code = dtc_match.group(1)
+            code = fix_dtc(raw_code)
+            code = re.sub(r'\.\d+$', '', code)
 
-        # 🔥 حذف الكلمات فقط
-        clean_line = line.replace("DTC", "")
-        clean_line = clean_line.replace("الحالي", "")
-        clean_line = clean_line.replace("التاريخ", "")
+            desc = line.split(raw_code, 1)[-1].strip()
 
-        # 🔥 إضافة السطر كما هو
-        data["dtc_raw"] += clean_line + " "
+            # 🔥 حذف كلمات مزعجة
+            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
 
+            # 🔥 حذف الأكواد المكررة داخل الوصف
+            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
+
+            # 🔥 قلب النص العربي
+            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
+            desc = desc.strip()
+
+            desc = desc.strip()
+
+            if len(desc) < 3:
+                continue
+
+            # دمج السطر التالي
+            if i + 1 < len(lines):
+                next_line = normalize_line(lines[i + 1])
+
+                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
+                    if not any(x in next_line for x in [
+                        "على ما يرام",
+                        "DTC",
+                        "الأنظمة"
+                    ]):
+                        desc += " " + next_line
+
+            # 🔥 لا تعتمد على current_system نهائياً
+            # استخدم system الذي حددناه من الكود
+            # ❌ تجاهل نصوص ليست أعطال
+            desc = re.split(r'إ.?خل.?اء', desc)[0]
+            desc = desc.strip()
+            
+            if any(x in desc for x in [
+                "إخلاء",
+                "المسؤولية",
+                "هذا التقرير",
+                "لا تتحمل",
+                "أي مسؤولية",
+                "LAUNCH",
+                "بيانات",
+                "service",
+            ]):
+                continue
+            
+            if "dtc" not in data:
+                data["dtc"] = []
+
+            data["dtc"].append({
+                "code": code,
+                "desc": desc.strip()
+            })
         print("LINE >>>", line)
         print("MATCH >>>", dtc_match)
 
@@ -402,6 +489,7 @@ def parse(text):
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
 
-        print("FINAL DATA >>>", data)
+            print("FINAL DATA >>>", data)
+    data["faults_raw"] = extract_faults_raw(text)    
 
     return data

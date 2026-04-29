@@ -139,14 +139,10 @@ def extract_raw_dtc_block(text):
 
     return "\n".join(result)
 
-def fill_system_tables(doc, systems_data):
+def fill_system_tables(doc, data):
 
     # 🔥 تطبيع المفاتيح أولاً
     normalized_data = {}
-
-    for key, value in systems_data.items():
-        fixed = key
-        normalized_data.setdefault(fixed, []).extend(value)
 
     # ثم استخدم البيانات الجديدة
     systems_data = normalized_data
@@ -158,21 +154,14 @@ def fill_system_tables(doc, systems_data):
 
         table = tables[i + 1]
 
-        dtcs = systems_data.get(system_name, [])
-
-        for idx, d in enumerate(dtcs):
+        faults = data.get("faults_raw", [])
+        for line in faults:
             row = table.add_row().cells
 
-            # 🔥 اكتب اسم النظام فقط في أول صف
-            if idx == 0:
-                row[0].text = system_name
-            else:
-                row[0].text = ""
-
-            row[0].text = system_name if idx == 0 else ""
-            row[1].text = d["code"]
-            row[2].text = d["desc"]
-
+            row[0].text = line   # النص كامل
+            row[1].text = ""
+            row[2].text = ""
+            
             # 🔥 تنسيق احترافي
             style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
             style_cell(row[1], bold=True)
