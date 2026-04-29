@@ -122,6 +122,20 @@ def fix_dtc(code):
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
     return match.group(1) if match else code
 
+def extract_dtc_raw(text):
+    import re
+
+    match = re.search(
+        r'(⚠️ الأعطال.*?)(الأنظمة التالية على ما يرام|$)',
+        text,
+        re.S
+    )
+
+    if match:
+        return match.group(1).strip()
+
+    return "لا يوجد أعطال"
+
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -162,7 +176,8 @@ def parse(text):
             "sn": ""
         },
         "systems": {},
-        "systems_ok": []
+        "systems_ok": [],
+        "dtc_raw": ""
     }
 
     # ====================================
@@ -173,6 +188,7 @@ def parse(text):
 
     # 🔥 تنظيف النص بالكامل من رموز OCR المخفية
     text_clean = re.sub(r'[\u200e\u200f\u202a-\u202e]', '', text)
+    data["dtc_raw"] = extract_dtc_raw(text)
 
     # توحيد المسافات
     text_clean = re.sub(r'\s+', ' ', text_clean)
@@ -461,7 +477,7 @@ def parse(text):
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
                 continue
-                
+
             if "DTC" in line:
                 continue
 

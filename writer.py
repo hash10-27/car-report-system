@@ -136,60 +136,6 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
-def fill_system_tables(doc, systems_data):
-
-    # 🔥 تطبيع المفاتيح أولاً
-    normalized_data = {}
-
-    for key, value in systems_data.items():
-        fixed = normalize_system_name(key)
-        normalized_data.setdefault(fixed, []).extend(value)
-
-    # ثم استخدم البيانات الجديدة
-    systems_data = normalized_data
-
-    system_order = ["HC", "ABS / VSC / TRAC", "SRS", "CM"]
-    display_names = {
-        "HC": "Hybrid Control",
-        "ABS / VSC / TRAC": "ABS / VSC / TRAC",
-        "SRS": "Airbag System",
-        "CM": "Communication Module"
-    }
-
-    tables = doc.tables
-
-    for i, system_name in enumerate(system_order):
-
-        if i >= len(tables):
-            break
-
-        table = tables[i + 1]
-
-        dtcs = systems_data.get(system_name, [])
-
-        for idx, d in enumerate(dtcs):
-            row = table.add_row().cells
-
-            # 🔥 اكتب اسم النظام فقط في أول صف
-            if idx == 0:
-                row[0].text = system_name
-            else:
-                row[0].text = ""
-
-            row[0].text = system_name if idx == 0 else ""
-            row[1].text = d["code"]
-            row[2].text = d["desc"]
-
-            # 🔥 تنسيق احترافي
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-            style_cell(row[1], bold=True)
-            style_cell(row[2])
-            style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
-
-            # 🔥 توسيط الخلايا
-            center_cell(row[0])
-            center_cell(row[1])
-            center_cell(row[2])
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
@@ -212,7 +158,7 @@ def fill_template(template_path, output_path, data):
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
         "{systems_ok}": "\n".join(data["systems_ok"]),
-        "{systems}": build_systems_text(data["systems"])
+        "{systems}": data["dtc_raw"]
     }
 
     for key, value in replacements.items():
