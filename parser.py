@@ -339,8 +339,9 @@ def parse(text):
 
         # 🔥 إضافة السطر كما هو
         data["dtc_raw"] += clean_line + " "
-                print("LINE >>>", line)
-                print("MATCH >>>", dtc_match)
+
+        print("LINE >>>", line)
+        print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
