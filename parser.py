@@ -121,7 +121,6 @@ def fix_dtc(code):
 
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
     return match.group(1) if match else code
-    
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -137,7 +136,6 @@ def parse(text):
             line = line[::-1]
 
         lines.append(line)
-
     # 🔥 إصلاح النص المقلوب (مهم جداً)
 
     import re
@@ -351,9 +349,6 @@ def parse(text):
             if len(desc) < 3:
                 continue
 
-            # تحديد النظام
-            # =========================
-            # 🔥 SYSTEM DETECTION# 🔥 تحديد النظام من الكود (أقوى من النص)
             # دمج السطر التالي
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
@@ -384,11 +379,10 @@ def parse(text):
             ]):
                 continue
             
-            if system not in data["systems"]:
-                data["systems"][system] = []
+            if "dtc" not in data:
+                data["dtc"] = []
 
-            data["systems"][system].append({
-                "system": system,
+            data["dtc"].append({
                 "code": code,
                 "desc": desc.strip()
             })
@@ -422,7 +416,7 @@ def parse(text):
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
                 continue
-
+                
             if "DTC" in line:
                 continue
 

@@ -120,13 +120,32 @@ def style_cell(cell, bold=False, color=None):
             if color:
                 run.font.color.rgb = color
 
+def extract_raw_dtc_block(text):
+    lines = text.split("\n")
+    capture = False
+    result = []
+
+    for line in lines:
+
+        if "رمز خطأ النظام" in line:
+            capture = True
+            continue
+
+        if "على ما يرام" in line:
+            break
+
+        if capture:
+            result.append(line.strip())
+
+    return "\n".join(result)
+
 def fill_system_tables(doc, systems_data):
 
     # 🔥 تطبيع المفاتيح أولاً
     normalized_data = {}
 
     for key, value in systems_data.items():
-        fixed = normalize_system_name(key)
+        fixed = key
         normalized_data.setdefault(fixed, []).extend(value)
 
     # ثم استخدم البيانات الجديدة
@@ -186,7 +205,7 @@ def fill_template(template_path, output_path, data):
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
         "{systems_ok}": "\n".join(data["systems_ok"]),
-        "{systems}": build_systems_text(data["systems"])
+        "{systems}": data.get("raw_dtc_text", "")
     }
 
     for key, value in replacements.items():
