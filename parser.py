@@ -122,11 +122,6 @@ def fix_dtc(code):
     match = re.search(r'([PBCU][0-9A-Z]{4})', code)
     return match.group(1) if match else code
 
-def fix_number(value):
-    if not value:
-        return value
-    return value[::-1]
-
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
@@ -244,7 +239,7 @@ def parse(text):
                     clean_next2 = re.sub(r'^\d+\.', '', next_line2).strip()
                     data["systems_ok"].append(clean_next2)
 
-                    continue
+            continue
 
         clean = fix_arabic_order(line)
         clean = clean.replace(" ", "")
@@ -253,7 +248,7 @@ def parse(text):
         if "السنة" in clean:
             year = re.search(r'\d{4}', line)
             if year:
-                data["car_info"]["year"] = fix_number(year.group())
+                data["car_info"]["year"] = year.group()
 
         elif "الصانع" in clean:
             make = re.search(r'[A-Z]+', line)
@@ -297,7 +292,7 @@ def parse(text):
                 # نأخذ أطول رقم (غالباً هو الصحيح)
                 value = max(numbers, key=len)
 
-                data["car_info"]["mileage"] = fix_number(value)
+                data["car_info"]["mileage"] = value
         # 👤 العميل
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
@@ -308,7 +303,7 @@ def parse(text):
         elif "الهاتف" in clean:
             phone = re.search(r'\d{6,}', line)
             if phone:
-                data["customer_info"]["phone"] = fix_number(phone.group())
+                data["customer_info"]["phone"] = phone.group()
 
         # ================================
         # ⚙️ بيانات إضافية
@@ -325,7 +320,7 @@ def parse(text):
         elif "SN" in line and not data["meta"]["sn"]:
             sn = re.search(r'\d{8,}', line)
             if sn:
-                data["meta"]["sn"] = fix_number(sn.group())
+                data["meta"]["sn"] = sn.group()
 
         # 🔥 اكتشاف اسم النظام من السطر
         system_line = re.search(r'(HC|ABS|VSC|TRAC|SRS|CM)', line)
@@ -436,15 +431,14 @@ def parse(text):
                 "code": code,
                 "desc": desc.strip()
             })
-            print("LINE >>>", line)
-            print("MATCH >>>", dtc_match)
+        print("LINE >>>", line)
+        print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
         # ================================
         if in_ok_section:
             print("OK SECTION >>>", line)
-            
             # ❌ تجاهل نصوص غير أنظمة
             if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
                 continue
@@ -467,10 +461,16 @@ def parse(text):
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
                 continue
-            
-            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
+            added = False
+
+            if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
+                data["systems_ok"].append(clean_line)
+                added = True
+
+            if added:
+                continue
 
             # باقي الشروط...
 
