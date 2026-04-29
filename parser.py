@@ -197,64 +197,23 @@ def extract_faults_raw(text):
             result.append(part)
 
     return result
-def merge_broken_lines(lines):
-    import re
 
-    merged = []
-    buffer = ""
-
-    for line in lines:
-        line = line.strip()
-
-        if not line:
-            continue
-
-        # 🔥 إذا السطر يبدأ بكود → سطر جديد
-        if re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', line):
-            if buffer:
-                merged.append(buffer)
-            buffer = line
-
-        # 🔥 إذا سطر عنوان مكمل
-        elif len(line) < 50:
-            buffer += " " + line
-
-        else:
-            if buffer:
-                merged.append(buffer)
-            buffer = line
-
-    if buffer:
-        merged.append(buffer)
-
-    return merged
 # ================================
 # 🔥 الدالة الرئيسية
 # ================================
 def parse(text):
-
-    import re
-
-    raw_lines = text.split("\n")
-
-    # 🔥 دمج الأسطر المكسورة
-    merged_lines = merge_broken_lines(raw_lines)
-
+    
     lines = []
-
-    for line in merged_lines:
-
+    for line in text.split("\n"):
         line = normalize_line(line)
 
-        # 🔥 تنظيف المسافات
-        line = re.sub(r'\s+', ' ', line).strip()
-
-        # ❌ لا تقلب السطر بالكامل (هذا كان سبب ضياع العناوين)
-        # if any('\u0600' <= c <= '\u06FF' for c in line):
-        #     line = line[::-1]
+        # قلب مرة واحدة فقط
+        if any('\u0600' <= c <= '\u06FF' for c in line):
+            line = line[::-1]
 
         lines.append(line)
-        
+    # 🔥 إصلاح النص المقلوب (مهم جداً)
+
     import re
 
     data = {
