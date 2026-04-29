@@ -124,7 +124,6 @@ def fix_dtc(code):
 def extract_faults_raw(text):
     import re
 
-    # 🔥 تنظيف النص
     text = re.sub(r'[\u200e\u200f\u202a-\u202e]', '', text)
 
     lines = text.split("\n")
@@ -137,29 +136,44 @@ def extract_faults_raw(text):
         if not line:
             continue
 
-        # 🔥 بداية القسم
         if "غير طبيعي" in line:
             start = True
+            result.append(line)  # ✅ لا تحذف العنوان
             continue
 
-        # 🔥 نهاية القسم
         if "على ما يرام" in line:
             break
 
         if not start:
             continue
 
-        # ❌ تجاهل الكلمات غير المطلوبة
-        if any(x.lower() in line.lower() for x in [
-            "dtc", "present", "الحالي", "التاريخ"
-        ]):
-            continue
+        # 🔥 تنظيف بدل تجاهل
+        for x in ["dtc", "present", "الحالي", "التاريخ"]:
+            line = re.sub(x, '', line, flags=re.IGNORECASE)
 
-        # 🔥 تنظيف أرقام الترتيب (1. 2. 3.)
         line = re.sub(r'^\d+\.', '', line).strip()
 
-        # 🔥 أضف السطر كما هو
-        result.append(line)
+        if not line:
+            continue
+
+        # 🔥 إذا عنوان (ما فيه كود)
+        if not re.search(r'[PCBU][0-9A-Z]{4}', line):
+            result.append(line)
+            continue
+
+        # 🔥 تقسيم الأعطال
+        parts = re.split(r'(?=[PCBU][0-9A-Z]{4})', line)
+
+        for part in parts:
+            part = part.strip()
+
+            if not part:
+                continue
+
+            if not re.match(r'^[PCBU][0-9A-Z]{4}', part):
+                continue
+
+            result.append(part)
 
     return result
 # ================================
