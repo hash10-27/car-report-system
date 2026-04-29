@@ -196,8 +196,8 @@ def parse(text):
     # 🔍 تحليل سطر بسطر
     # ====================================
     in_ok_section = False
-    current_system = None
-    in_dtc_section = False
+    in_dtc_block = False
+    
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
@@ -325,12 +325,39 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
-        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
+        # ================================
+        # 🔥 نسخ الأعطال كما هي (RAW)
+        # ================================
 
-        if dtc_match:
-            raw_code = dtc_match.group(1)
-            code = fix_dtc(raw_code)
-            code = re.sub(r'\.\d+$', '', code)
+        # بداية قسم الأعطال
+        if "رمز" in line and "خطأ" in line:
+            in_dtc_block = True
+            continue
+
+        # نهاية القسم
+        if "على ما يرام" in line:
+            in_dtc_block = False
+            continue
+
+        if in_dtc_block:
+            clean_line = line.strip()
+
+            if not clean_line:
+                continue
+
+            # تجاهل الحشو فقط
+            if any(x in clean_line for x in [
+                "إخلاء",
+                "المسؤولية",
+                "هذا التقرير",
+                "LAUNCH"
+            ]):
+                continue
+
+            # 🔥 أهم سطر
+            data["dtc_raw"].append(clean_line)
+
+            continue
 
             desc = line.split(raw_code, 1)[-1].strip()
 
@@ -386,8 +413,8 @@ def parse(text):
                 "code": code,
                 "desc": desc.strip()
             })
-        print("LINE >>>", line)
-        print("MATCH >>>", dtc_match)
+            print("LINE >>>", line)
+            print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
