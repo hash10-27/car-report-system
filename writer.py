@@ -211,6 +211,7 @@ def fill_system_tables(doc, faults_raw):
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
     fill_ok_systems_table(doc, data["systems_ok"])
+    fill_system_tables(doc, data["faults_raw"])
 
     replacements = {
         "{year}": data["car_info"]["year"],
@@ -229,7 +230,6 @@ def fill_template(template_path, output_path, data):
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
         "{systems_ok}": "\n".join(data["systems_ok"]),
-        fill_system_tables(doc, data["faults_raw"]),
         "{systems}": "\n".join(
             f"{d['code']} {d['desc']}" for d in data.get("dtc", [])
         )
