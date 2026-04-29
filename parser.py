@@ -402,6 +402,11 @@ def parse(text):
         # 🔥 الأعطال (بدون section)
         # ================================
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
+        # 🔥 اكتشاف اسم النظام
+        if not dtc_match:
+            if len(line) < 60 and not any(x in line for x in ["DTC", "الحالي", "التاريخ"]):
+                current_system = line
+            continue
        
         if dtc_match:
             raw_code = dtc_match.group(1)
@@ -460,7 +465,8 @@ def parse(text):
 
             data["dtc"].append({
                 "code": code,
-                "desc": desc.strip()
+                "desc": desc.strip(),
+                "system": current_system
             })
         print("LINE >>>", line)
         print("MATCH >>>", dtc_match)
