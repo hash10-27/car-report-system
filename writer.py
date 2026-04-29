@@ -143,7 +143,7 @@ def fill_system_tables(doc, faults_raw):
 
     import re
 
-    table = doc.tables[0]  # اختر الجدول المناسب
+    table = doc.tables[1]  # اختر الجدول المناسب
 
     ignore_words = ["DTC", "Present", "الحالي", "التاريخ"]
 
