@@ -127,41 +127,7 @@ def fix_number(value):
         return value
     return value[::-1]
 
-def is_system_line(line):
-    line = line.strip()
 
-    if not line:
-        return False
-
-    # ❌ استبعاد أكواد الأعطال
-    if re.search(r'[PBCU]\d{4}', line):
-        return False
-
-    # ❌ استبعاد أسطر DTC
-    if "DTC" in line:
-        return False
-
-    # ❌ استبعاد الجمل الطويلة (وصف)
-    if len(line) > 60:
-        return False
-
-    # ❌ استبعاد الأسطر القصيرة جداً (مثل LH / HL)
-    if len(line) <= 3:
-        return False
-
-    # ❌ استبعاد كلمات ليست نظام
-    if line in ["LH", "RH", "HL"]:
-        return False
-
-    # ✅ إذا يحتوي عربي → غالباً نظام
-    if re.search(r'[\u0600-\u06FF]', line):
-        return True
-
-    # ✅ أو يحتوي اختصار إنجليزي (2-5 حروف)
-    if re.search(r'\b[A-Z]{2,5}\b', line):
-        return True
-
-    return False
 
 # ================================
 # 🔥 الدالة الرئيسية
@@ -392,16 +358,7 @@ def parse(text):
         # 🔥 نهاية القسم
         if "على ما يرام" in line or "إخلاء المسؤولية" in line:
             break
-        # 🔥 تحديث النظام فقط إذا لم نكن داخل وصف عطل
-        if is_system_line(line) and not re.search(r'[PBCU]\d{4}', line):
-            
-            # ❌ لا تغيّر النظام إذا كان هذا السطر جزء من وصف
-            if last_fault and len(line) < 50:
-                pass
-            else:
-                current_system = line.strip()
-                last_fault = None  # 🔥 مهم جداً
-            continue
+
         # 🔍 استخراج الكود
         elif (
             # يحتوي حروف كبيرة (رمز النظام)
