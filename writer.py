@@ -78,23 +78,8 @@ def normalize_system_name(name):
         return "CM"
 
     return name
+
 def build_systems_text(systems):
-
-    if not systems:
-        return "لا يوجد أعطال"
-
-    text = ""
-
-    for system, dtcs in systems.items():
-
-        text += f"\n🔧 {system}\n"
-        text += "النظام | الكود | الوصف\n"
-        text += "-" * 30 + "\n"
-
-        for d in dtcs:
-            text += f"{system} | {d['code']} | {d['desc']}\n"
-
-    return textdef build_systems_text(systems):
 
     if not systems:
         return "لا يوجد أعطال"
