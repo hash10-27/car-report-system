@@ -146,7 +146,7 @@ def is_system_line(line):
         return False
 
     # ❌ استبعاد الأسطر القصيرة جداً (مثل LH / HL)
-    if len(line.strip()) <= 4:
+    if len(line) <= 3:
         return False
 
     # ❌ استبعاد كلمات ليست نظام
@@ -459,6 +459,7 @@ def parse(text):
             # تكملة وصف
             if last_fault and len(line) < 80:
                 last_fault["desc"] += " " + line
+
         
         # ================================
         # ✅ الأنظمة السليمة
