@@ -440,11 +440,11 @@ def parse(text):
         if in_ok_section:
             print("OK SECTION >>>", line)
             # ❌ تجاهل نصوص غير أنظمة
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
-                continue
+            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', line):
+                break
 
             # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
-            if "على ما يرام" in lines[i-1]:
+            if i > 0 and "على ما يرام" in lines[i-1]:
                 pass
 
             print("RAW LINE >>>", repr(line))  # 👈 هنا
@@ -460,6 +460,9 @@ def parse(text):
 
             # ❌ تجاهل السطور الفارغة
             if not clean_line:
+                continue
+                
+            if "DTC" in line:
                 continue
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
