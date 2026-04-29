@@ -204,6 +204,7 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
+    data["systems_ok"] = extract_ok_systems_block(text)
 
     for i, line in enumerate(lines):
         line = normalize_line(line)
@@ -436,58 +437,12 @@ def parse(text):
                 "code": code,
                 "desc": desc.strip()
             })
-        print("LINE >>>", line)
-        print("MATCH >>>", dtc_match)
+            print("LINE >>>", line)
+            print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
         # ================================
-        if in_ok_section:
-            print("OK SECTION >>>", line)
-            # ❌ تجاهل نصوص غير أنظمة
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', clean_line):
-                continue
-
-            # 🔥 إذا هذا أول سطر بعد العنوان لا تتجاهله
-            if "على ما يرام" in lines[i-1]:
-                pass
-
-            print("RAW LINE >>>", repr(line))  # 👈 هنا
-
-            # وقف عند نهاية التقرير
-            if re.search(r'إ.?خل.?اء|مسؤ.?ول', line):
-                break
-
-            # تنظيف
-            clean_line = re.sub(r'^\d+\.', '', line).strip()
-
-            print("CLEAN LINE >>>", repr(clean_line))  # 👈 
-
-            # ❌ تجاهل السطور الفارغة
-            if not clean_line:
-                continue
-            
-            clean_line = re.sub(r'(EOBD)+', 'EOBD', clean_line)
-
-            # ✅ اسم نظام حتى لو قصير (مثل EOBD)
-
-            # باقي الشروط...
-
-            # ❌ تجاهل الجمل الطويلة (ليست أنظمة)
-            # ❌ تجاهل فقط الجمل الطويلة جداً (رفع الحد)
-            if len(clean_line) > 100:
-                continue
-
-            # ❌ تجاهل النصوص التوضيحية
-            if any(x in clean_line for x in [
-                "هذا التقرير",
-                "بيانات",
-                "LAUNCH"
-            ]):
-                continue
-
-            # 🔥 أضف مباشرة بدون شروط قاسية
-            data["systems_ok"].append(clean_line)
 
         print("FINAL DATA >>>", data)
 
