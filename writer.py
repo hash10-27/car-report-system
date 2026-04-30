@@ -138,8 +138,6 @@ def fill_system_tables(doc, faults_raw):
         line = line.strip()
         if not line:
             continue
-        if line in ["LH", "HL", "المختلطة"]:
-            continue
 
         if not has_dtc(line):
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
