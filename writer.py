@@ -215,6 +215,9 @@ def fill_template(template_path, output_path, data):
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
         "{systems_ok}": "\n".join(data["systems_ok"]),
+        "{systems}": "\n".join(
+            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])
+        )
     }
 
     for key, value in replacements.items():

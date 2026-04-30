@@ -133,68 +133,32 @@ def extract_faults_raw(text):
 
     for line in lines:
         line = line.strip()
-        # إصلاح المسافات الغريبة من PDF
-        line = re.sub(r'\s+', ' ', line)
+
         if not line:
             continue
 
+        # 🔥 بداية القسم
         if "غير طبيعي" in line:
             start = True
-            result.append(line)  # ✅ لا تحذف العنوان
+            result.append(line)
             continue
 
+        # 🔥 نهاية القسم
         if "على ما يرام" in line:
             break
 
         if not start:
             continue
 
-        # 🔥 تنظيف بدل تجاهل
-        for x in ["dtc", "present", "الحالي", "التاريخ"]:
-            line = re.sub(x, '', line, flags=re.IGNORECASE)
+        # 🔥 تنظيف فقط بدون حذف السطر
+        line = re.sub(r'(DTC|Present|الحالي|التاريخ)', '', line, flags=re.IGNORECASE)
 
         line = re.sub(r'^\d+\.', '', line).strip()
 
         if not line:
             continue
 
-        # 🔥 إذا عنوان (ما فيه كود)
-        # 🔥 تعريف العناوين المهمة
-        is_header = any(x in line for x in [
-            "المحرك",
-            "EOBD",
-            "GEN",
-            "النظام",
-            "غير طبيعي",
-            "الرصاص",
-            "التحكم",
-            "مقياس",
-            "تثبيت",
-        ])
-
-        # 🔥 إذا عنوان → أضفه مباشرة
-        if is_header:
-            result.append(line)
-            continue
-
-        # 🔥 إذا لا يحتوي كود → غالباً عنوان أيضاً (لكن نحميه)
-        if not re.search(r'[PCBU][0-9A-Z]{4}', line):
-            result.append(line)
-            continue
-
-        # 🔥 تقسيم الأعطال
-        parts = re.split(r'(?=[PCBU][0-9A-Z]{4})', line)
-
-        for part in parts:
-            part = part.strip()
-
-            if not part:
-                continue
-
-            if not re.match(r'^[PCBU][0-9A-Z]{4}', part):
-                continue
-
-            result.append(part)
+        result.append(line)
 
     return result
 
