@@ -220,19 +220,18 @@ def parse(text):
             if sn:
                 data["meta"]["sn"] = sn.group()
 
-        if re.match(r'^\d+\.[^\d].*', line) and re.search(r'[؀-ۿ]', line):
-            current_title = re.sub(r'^\d+\.', '', line).strip()
+        title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
+        title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
+        if re.match(r'^d+.', line) and re.search(r'[؀-ۿ]', title_candidate):
+            current_title = title_candidate
             if current_title not in data["systems"]:
                 data["systems"][current_title] = []
-
-                print(f"✅ عنوان جديد: '{current_title}'")
 
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
         if dtc_match:
             raw_code = dtc_match.group(1)
             code = fix_dtc(raw_code)
-            code = re.sub(r'.d+$', '', code)
             desc = line.split(raw_code, 1)[-1].strip()
             desc = re.sub(r'(الحالي|التاريخ)', '', desc)
             desc = re.sub(r'[0-9]+.[0-9A-Z]{4}[PBCU]', '', desc)
