@@ -382,7 +382,7 @@ def parse(text):
         # ================================================  
         
         # 1️⃣ ابدأ بافتراض بأنه ماعدا عنوان جديد  
-        is_dtc_line = bool(re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line))  
+        is_dtc_line = bool(re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)) 
         
         # 2️⃣ إذا السطر يحتوي على DTC، استخدم العنوان الحالي  
         # 3️⃣ إذا السطر عربي وطويل وَمافيه DTC، فهو عنوان جديد  
@@ -393,7 +393,9 @@ def parse(text):
             and not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي", "رمز خطأ"])
             and len(line) > 4
         ):
-        
+            current_title = line.strip()
+            print(f"✅ عنوان جديد: '{current_title}'")
+                
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)  
         
         if dtc_match:  
