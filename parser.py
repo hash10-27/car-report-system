@@ -421,9 +421,7 @@ def parse(text):
                     ]):
                         desc += " " + next_line
 
-            # ❌ تجاهل نصوص ليست أعطال
-            desc = desc.strip()
-            
+            # ❌ تجاهل نصوص ليست أعطال            
             if any(x in desc for x in [
                 "إخلاء",
                 "المسؤولية",
