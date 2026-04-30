@@ -231,7 +231,10 @@ def parse(text):
         if any(p in line for p in section_prefixes):
             continue
 
-        title_candidate = re.sub(r'^d+.s*', '', line).strip()
+        is_dtc_line = bool(re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', line))
+
+        # 🔥 تنظيف السطر
+        title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
         title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
         if re.match(r'^d+.', line) and re.search(r'[؀-ۿ]', title_candidate):
@@ -253,9 +256,9 @@ def parse(text):
                 continue
 
             desc = parts[1].strip()
-            desc = re.sub(r'^(الحالي|التاريخ)s*', '', desc)
-            desc = re.sub(r'\bDTC\bs*d*', '', desc).strip()
-            desc = re.sub(r's+', ' ', desc)
+            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+            desc = re.sub(r'\bDTC\b\s*\d*', '', desc)
+            desc = re.sub(r'\s+', ' ', desc)
 
             if len(desc) < 3:
                 continue
