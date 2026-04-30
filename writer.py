@@ -138,15 +138,38 @@ def fill_system_tables(doc, faults_raw):
         line = line.strip()
         if not line:
             continue
+        if line in ["LH", "HL", "المختلطة"]:
+            continue
 
         if not has_dtc(line):
+
+            # ❌ تجاهل سطور غير مفيدة
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
+            if len(table.rows) > 0:
+                last_row = table.rows[-1].cells
+                last_row[2].text += " " + line
+
+            # 🔥 إذا عندنا عنوان سابق → احتمال يكون هذا تكملة وصف
+            if current_title:
+                # شرط: سطر قصير أو يحتوي كلمات وصف
+                if (
+                    len(line) < 50
+                    or any(x in line for x in ["HL", "LH", "الستارة", "الجانبي", "الخلفي"])
+                ):
+                    # 🔥 لا نغير العنوان، هذا وصف
+                    last_row = table.rows[-1].cells
+                    last_row[2].text += " " + line
+                    continue
+
+            # 🔥 عنوان جديد حقيقي
             current_title = line.strip()
+
             row = table.add_row().cells
             row[0].text = f"🔹 {current_title}"
             row[1].text = ""
             row[2].text = ""
+
             style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
             center_cell(row[0])
             continue
