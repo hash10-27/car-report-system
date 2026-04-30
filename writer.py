@@ -140,46 +140,44 @@ def extract_raw_dtc_block(text):
     return "\n".join(result)
 
 def fill_system_tables(doc, faults_raw):
-    print("🔥 ENTER fill_system_tables")
     import re
 
-    table = doc.tables[1]  # تأكد أنه جدول الأعطال
+    table = doc.tables[1]
 
-    seen = set()
+    def has_dtc(line):
+        return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-    # 🔥 دعم list أو string
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
     for line in faults_raw:
-
-        original_line = line  # احتفظ بالأصل
         line = line.strip()
 
         if not line:
             continue
 
-        # 🔥 تنظيف خفيف فقط (بدون تدمير السطر)
-        clean_line = re.sub(r'(DTC|Present|الحالي|التاريخ)', '', line).strip()
+        # 🔥 تجاهل سطور غير مفيدة
+        if len(line) < 4:
+            continue
 
-        # 🔥 إذا لا يوجد كود → هذا عنوان (استخدم النص الأصلي)
-        if not re.search(r'[PCBU][0-9A-Z]{4}', clean_line):
+        if line in ["LH", "HL", "المختلطة"]:
+            continue
+
+        # 🔥 عنوان
+        if not has_dtc(line):
             row = table.add_row().cells
-            row[0].text = f"🔹 {original_line.strip()}"  # 👈 استخدم الأصلي
+            row[0].text = f"🔹 {line}"
             row[1].text = ""
             row[2].text = ""
             continue
 
-        # 🔥 تقسيم الأعطال
-        parts = re.split(r'(?=[PCBU][0-9A-Z]{4})', clean_line)
+        # 🔥 أعطال
+        parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
 
         for part in parts:
             part = part.strip()
-
-            if not part or part in seen:
+            if not part:
                 continue
-
-            seen.add(part)
 
             row = table.add_row().cells
             row[0].text = part
