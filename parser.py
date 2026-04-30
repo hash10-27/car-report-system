@@ -232,13 +232,14 @@ def parse(text):
             if current_title not in data["systems"]:
                 data["systems"][current_title] = []
 
-        if not code:
-            continue
 
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
         if dtc_match:
             raw_code = dtc_match.group(1)
             code = fix_dtc(raw_code)
+            if not code:
+                continue
+                
             parts = line.split(raw_code, 1)
             if len(parts) < 2:
                 continue
