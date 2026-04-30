@@ -241,6 +241,7 @@ def parse(text):
     in_dtc_section = False
     faults_raw = []
     capture = False
+    current_title = ""
     
 
     for i, line in enumerate(lines):
@@ -379,6 +380,13 @@ def parse(text):
         # ================================
         # 🔥 الأعطال (بدون section)
         # ================================
+        # ✅ التقاط عنوان القسم قبل الأكواد (مثل: التحكم الهجين CH / نظام الفرامل ... )
+        # اعتبر أي سطر عربي طويل نسبيًا ولا يحتوي على نمط كود DTC ولا يحتوي على كلمات مثل "على ما يرام" أو "DTC"
+        if re.search(r'[\u0600-\u06FF]', line) and not re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line) and \
+        not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي"]):
+            # حد بسيط للتمييز: العنوان غالبًا أطول من وصف قصير
+            if len(line) > 6:
+                current_title = line
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
        
         if dtc_match:
@@ -438,7 +446,8 @@ def parse(text):
 
             data["dtc"].append({
                 "code": code,
-                "desc": desc.strip()
+                "desc": desc.strip(),
+                "title": current_title.strip()
             })
         print("LINE >>>", line)
         print("MATCH >>>", dtc_match)
