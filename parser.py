@@ -223,7 +223,7 @@ def parse(text):
         title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
         title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
-        if re.match(r'^d+.', line) and re.search(r'[؀-ۿ]', title_candidate):
+        if re.match(r'^\d+\.', line) and re.search(r'[؀-ۿ]', title_candidate):
             current_title = title_candidate
             if current_title not in data["systems"]:
                 data["systems"][current_title] = []
