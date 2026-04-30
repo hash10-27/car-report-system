@@ -151,7 +151,7 @@ def extract_faults_raw(text):
             continue
 
         # 🔥 تنظيف فقط بدون حذف السطر
-        line = re.sub(r'(DTC|Present|الحالي|التاريخ)', '', line, flags=re.IGNORECASE)
+        line = re.sub(r'(Present|الحالي|التاريخ)', '', line, flags=re.IGNORECASE)
 
         line = re.sub(r'^\d+\.', '', line).strip()
 
@@ -409,7 +409,6 @@ def parse(text):
                 if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
                     if not any(x in next_line for x in [
                         "على ما يرام",
-                        "DTC",
                         "الأنظمة"
                     ]):
                         desc += " " + next_line
@@ -432,8 +431,6 @@ def parse(text):
             ]):
                 continue
             
-            if "dtc" not in data:
-                data["dtc"] = []
 
             data["dtc"].append({
                 "code": code,
@@ -470,8 +467,7 @@ def parse(text):
             if not clean_line:
                 continue
                 
-            if "DTC" in line:
-                continue
+
 
             # ✅ اسم نظام حتى لو قصير (مثل EOBD)
             added = False
