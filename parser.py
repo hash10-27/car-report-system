@@ -238,6 +238,8 @@ def parse(text):
     in_ok_section = False
     current_system = None
     in_dtc_section = False
+    faults_raw = []
+    capture = False
     
 
     for i, line in enumerate(lines):
@@ -250,6 +252,16 @@ def parse(text):
 
         if not line:
             continue
+        
+        # 🔥 التقاط RAW من نفس البيانات المعالجة
+        if "غير طبيعي" in line:
+            capture = True
+
+        if "على ما يرام" in line:
+            capture = False
+
+        if capture:
+            faults_raw.append(line)
 
         # 🔥 استخراج الأنظمة من الأقواس
         systems = re.findall(r'\((.*?)\)', line)
@@ -489,7 +501,7 @@ def parse(text):
             # 🔥 أضف مباشرة بدون شروط قاسية
             data["systems_ok"].append(clean_line)
 
-            print("FINAL DATA >>>", data)
-    data["faults_raw"] = extract_faults_raw(text)    
+            print("FINAL DATA >>>", data)  
+    data["faults_raw"] = faults_raw
 
     return data
