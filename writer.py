@@ -142,7 +142,11 @@ def extract_raw_dtc_block(text):
 def fill_system_tables(doc, faults_raw):
     import re
 
-    table = doc.tables[1]
+    if len(doc.tables) > 1:
+        table = doc.tables[1]
+    else:
+        print("⚠️ لا يوجد جدول كافي")
+        return
 
     def has_dtc(line):
         return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
