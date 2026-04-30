@@ -134,64 +134,59 @@ def fill_system_tables(doc, faults_raw):
     def has_dtc(line):
         return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-    for line in faults_raw:
-        line = line.strip()
-        if not line:
-            continue
-        if line in ["LH", "HL", "المختلطة"]:
-            continue
 
-        if not has_dtc(line):
+    # 🔥 الحالة 1: عنوان
+    if not has_dtc(line):
 
-            # ❌ تجاهل سطور غير مفيدة
-            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
-                continue
-
-
-            # 🔥 إذا عندنا عنوان سابق → احتمال يكون هذا تكملة وصف
-            if current_title:
-                # شرط: سطر قصير أو يحتوي كلمات وصف
-                if (
-                    len(line) < 50
-                    or any(x in line for x in ["HL", "LH", "الستارة", "الجانبي", "الخلفي"])
-                ):
-                    # 🔥 لا نغير العنوان، هذا وصف
-                    last_row = table.rows[-1].cells
-                    last_row[2].text += " " + line
-                    continue
-
-            # 🔥 عنوان جديد حقيقي
-            current_title = line.strip()
-
-            row = table.add_row().cells
-            row[0].text = f"🔹 {current_title}"
-            row[1].text = ""
-            row[2].text = ""
-
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-            center_cell(row[0])
+        if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
             continue
 
-        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
-        for part in parts:
-            part = part.strip()
-            if not part:
+        # 🔥 دمج عنوان مقطوع
+        if current_title:
+            if len(line) < 50 or not line.startswith("نظام"):
+                current_title += " " + line
                 continue
-            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
-            if not m:
-                continue
-            row = table.add_row().cells
-            title_to_use = current_title or 'غير محدد'
-            row[0].text = title_to_use
-            row[1].text = m.group(0).replace('.', '') if m else ''
-            desc = part[m.end():].strip()
-            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
-            row[2].text = desc
-            style_cell(row[0], bold=True)
-            center_cell(row[0])
-            center_cell(row[1])
-            center_cell(row[2])
 
+        # 🔥 عنوان جديد
+        current_title = line.strip()
+
+        row = table.add_row().cells
+        row[0].text = f"🔹 {current_title}"
+        row[1].text = ""
+        row[2].text = ""
+
+        style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+        center_cell(row[0])
+        continue
+
+
+    # 🔥 الحالة 2: DTC (مهم يكون خارج if)
+    parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
+
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+
+        m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+        if not m:
+            continue
+
+        row = table.add_row().cells
+        title_to_use = current_title or 'غير محدد'
+
+        row[0].text = title_to_use
+        row[1].text = m.group(0).replace('.', '')
+
+        desc = part[m.end():].strip()
+        desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+
+        row[2].text = desc
+
+        style_cell(row[0], bold=True)
+        center_cell(row[0])
+        center_cell(row[1])
+        center_cell(row[2])
 
 
 # 🔹 تعبئة القالب
