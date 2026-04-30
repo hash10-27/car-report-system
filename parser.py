@@ -84,27 +84,36 @@ def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)
     lines = text.split("\n")
+
     start = False
     result = []
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
+
         if "غير طبيعي" in line:
             start = True
-            result.append(line)
-            continue
+            continue   # 🔥 لا تضيف العنوان
+
         if "على ما يرام" in line:
             break
+
         if not start:
             continue
+
         line = re.sub(r'(DTC|Present|الحالي|التاريخ)', '', line, flags=re.IGNORECASE)
-        line = re.sub(r'^\d+\.', '', line).strip()
+        line = re.sub(r'^\d+\.\s*', '', line)
+        line = re.sub(r'\s+', ' ', line).strip()
+
         if not line:
             continue
-        result.append(line)
-    return result
 
+        result.append(line)
+
+    return result
+    
 import re
 def parse(text):
     lines = []
