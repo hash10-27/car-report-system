@@ -138,51 +138,72 @@ def extract_raw_dtc_block(text):
             result.append(line.strip())
 
     return "\n".join(result)
-
 def fill_system_tables(doc, faults_raw):
     import re
 
+    if len(doc.tables) < 2:
+        print("❌ No table found")
+        return
+
     table = doc.tables[1]
 
-    def has_dtc(line):
+    def is_dtc(line):
         return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-        if isinstance(faults_raw, str):
-            faults_raw = faults_raw.splitlines()
+    current_system = None
 
-        for line in faults_raw:
-            line = line.strip()
+    if isinstance(faults_raw, str):
+        faults_raw = faults_raw.splitlines()
 
-            if not line:
+    for line in faults_raw:
+        line = line.strip()
+
+        if not line:
+            continue
+
+        # ❌ تجاهل سطور غير مفيدة
+        if line in ["LH", "HL", "المختلطة"]:
+            continue
+
+        # ============================
+        # 🟢 1. إذا السطر عنوان
+        # ============================
+        if not is_dtc(line):
+
+            # تجاهل كلمات مزعجة
+            if any(x in line for x in ["DTC", "الحالي", "التاريخ"]):
                 continue
 
-            # 🔥 تجاهل سطور غير مفيدة
-            if len(line) < 4:
+            current_system = line  # 🔥 احفظ العنوان
+
+            # اطبع العنوان مباشرة
+            row = table.add_row().cells
+            row[0].text = f"🔹 {current_system}"
+            row[1].text = ""
+            row[2].text = ""
+
+            continue
+
+        # ============================
+        # 🔴 2. إذا السطر فيه DTC
+        # ============================
+        parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
+
+        for part in parts:
+            part = part.strip()
+            if not part:
                 continue
 
-            if line in ["LH", "HL", "المختلطة"]:
-                continue
+            row = table.add_row().cells
 
-            # 🔥 عنوان
-            if not has_dtc(line):
-                row = table.add_row().cells
-                row[0].text = f"🔹 {line}"
-                row[1].text = ""
-                row[2].text = ""
-                continue
-
-            # 🔥 أعطال
-            parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
-
-            for part in parts:
-                part = part.strip()
-                if not part:
-                    continue
-
-                row = table.add_row().cells
+            # 🔥 اربط العطل مع العنوان
+            if current_system:
+                row[0].text = f"{current_system} | {part}"
+            else:
                 row[0].text = part
-                row[1].text = ""
-                row[2].text = ""
+
+            row[1].text = ""
+            row[2].text = ""
                 # 🔥 تنسيق احترافي
                 #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
                 #style_cell(row[1], bold=True)
