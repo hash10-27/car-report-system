@@ -223,14 +223,20 @@ def parse(text):
         title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
         title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
+        is_dtc_line = bool(re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', line))
+
         if (
-            re.match(r'^\d+\.', line)
-            and re.search(r'[؀-ۿ]', title_candidate)
-            and not any(x in title_candidate for x in ["DTC", "Present", "الحالي", "التاريخ", "غير طبيعي"])
+            not is_dtc_line
+            and re.search(r'[؀-ۿ]', line)
+            and len(line) > 6
+            and not any(x in line for x in ["DTC", "Present", "الحالي", "التاريخ", "غير طبيعي"])
         ):
-            current_title = title_candidate
+            current_title = line.strip()
+
             if current_title not in data["systems"]:
                 data["systems"][current_title] = []
+
+            print(f"✅ عنوان جديد: '{current_title}'")
 
 
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
