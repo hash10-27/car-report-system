@@ -220,58 +220,60 @@ def parse(text):
             if sn:
                 data["meta"]["sn"] = sn.group()
 
-        title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
+        section_prefixes = (
+            "النظام التالي غير طبيعي",
+            "الأنظمة التالية غير طبيعية",
+            "النظام التالي غير طبيعي:",
+        )
+
+        bad_title_tokens = ("DTC", "Present", "الحالي", "التاريخ", "غير طبيعي")
+
+        if any(p in line for p in section_prefixes):
+            continue
+
+        title_candidate = re.sub(r'^d+.s*', '', line).strip()
         title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
-        if (
-            re.match(r'^\d+\.', line)
-            and re.search(r'[؀-ۿ]', title_candidate)
-            and not any(x in title_candidate for x in ["DTC", "Present", "الحالي", "التاريخ", "غير طبيعي"])
-        ):
-            current_title = title_candidate
-            if current_title not in data["systems"]:
-                data["systems"][current_title] = []
+        if re.match(r'^d+.', line) and re.search(r'[؀-ۿ]', title_candidate):
+            if not any(tok in title_candidate for tok in bad_title_tokens):
+                current_title = title_candidate
+                data["systems"].setdefault(current_title, [])
+                continue
 
 
-        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
+        dtc_match = re.search(r'([0-9]+.[0-9A-Z]{4}[PCBU])', line)
         if dtc_match:
             raw_code = dtc_match.group(1)
             code = fix_dtc(raw_code)
             if not code:
                 continue
-                
+
             parts = line.split(raw_code, 1)
             if len(parts) < 2:
                 continue
 
             desc = parts[1].strip()
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-            desc = re.sub(r'[0-9]+.[0-9A-Z]{4}[PBCU]', '', desc)
-            desc = desc.strip()
+            desc = re.sub(r'^(الحالي|التاريخ)s*', '', desc)
+            desc = re.sub(r'\bDTC\bs*d*', '', desc).strip()
+            desc = re.sub(r's+', ' ', desc)
 
             if len(desc) < 3:
                 continue
 
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
-                if next_line and not re.search(
-                    r'[PCBU][0-9A-Z]{4}', next_line
-                ):
-                    if next_line and not any(x in next_line for x in ["على ما يرام", "DTC", "الأنظمة", "غير طبيعي", "Present", "الحالي", "التاريخ"]):
+                if next_line and not any(x in next_line for x in ["على ما يرام", "DTC", "الأنظمة", "غير طبيعي", "Present", "الحالي", "التاريخ"]):
+                    if not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
                         desc += " " + next_line
 
             if any(x in desc for x in ["إخلاء", "المسؤولية", "هذا التقرير", "لا تتحمل", "أي مسؤولية", "LAUNCH", "بيانات", "service"]):
                 continue
-                
-            if "dtc" not in data:
-                data["dtc"] = []
-            title_to_use = current_title.strip() if current_title else ""
-            item = {"code": code, "desc": desc.strip(), "title": title_to_use}
+
+            item = {"code": code, "desc": desc.strip(), "title": current_title or ""}
             data["dtc"].append(item)
-            if title_to_use:
-                if title_to_use not in data["systems"]:
-                    data["systems"][title_to_use] = []
-                data["systems"][title_to_use].append(item)
+
+            if current_title:
+                data["systems"].setdefault(current_title, []).append(item)
         if in_ok_section:
             if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', line):
                 break
