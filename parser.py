@@ -406,8 +406,6 @@ def parse(text):
             # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
             desc = desc.strip()
 
-            desc = desc.strip()
-
             if len(desc) < 3:
                 continue
 
@@ -423,10 +421,7 @@ def parse(text):
                     ]):
                         desc += " " + next_line
 
-            # 🔥 لا تعتمد على current_system نهائياً
-            # استخدم system الذي حددناه من الكود
             # ❌ تجاهل نصوص ليست أعطال
-            desc = re.split(r'إ.?خل.?اء', desc)[0]
             desc = desc.strip()
             
             if any(x in desc for x in [
@@ -449,8 +444,8 @@ def parse(text):
                 "desc": desc.strip(),
                 "title": current_title.strip()
             })
-        print("LINE >>>", line)
-        print("MATCH >>>", dtc_match)
+            print("LINE >>>", line)
+            print("MATCH >>>", dtc_match)
 
         # ================================
         # ✅ الأنظمة السليمة
