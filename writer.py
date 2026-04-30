@@ -163,12 +163,14 @@ def fill_system_tables(doc, faults_raw):
             if line in ["LH", "HL", "المختلطة"]:
                 continue
 
-            # 🔥 عنوان
             if not has_dtc(line):
+                current_title = line
+
                 row = table.add_row().cells
                 row[0].text = f"🔹 {line}"
                 row[1].text = ""
                 row[2].text = ""
+
                 continue
 
             # 🔥 أعطال
@@ -180,7 +182,7 @@ def fill_system_tables(doc, faults_raw):
                     continue
 
                 row = table.add_row().cells
-                row[0].text = part
+                row[0].text = f"{current_title} | {part}"
                 row[1].text = ""
                 row[2].text = ""
                 # 🔥 تنسيق احترافي
