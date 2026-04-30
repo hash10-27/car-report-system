@@ -394,7 +394,7 @@ def parse(text):
             and len(line) > 4
         ):
         
-        dtc_match = re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line)  
+        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)  
         
         if dtc_match:  
             raw_code = dtc_match.group(1)  
