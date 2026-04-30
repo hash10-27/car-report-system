@@ -138,25 +138,51 @@ def extract_raw_dtc_block(text):
             result.append(line.strip())
 
     return "\n".join(result)
+
 def fill_system_tables(doc, faults_raw):
-    table = doc.tables[1]  # تأكد هذا جدول الأعطال
+    import re
 
-    # دعم list أو string
+    table = doc.tables[1]
+
+    def has_dtc(line):
+        return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+
     if isinstance(faults_raw, str):
-        lines = faults_raw.splitlines()
-    else:
-        lines = faults_raw
+        faults_raw = faults_raw.splitlines()
 
-    for line in lines:
-        text = line.strip()
+    for line in faults_raw:
+        line = line.strip()
 
-        if not text:
+        if not line:
             continue
 
-        row = table.add_row().cells
-        row[0].text = text
-        row[1].text = ""
-        row[2].text = ""
+        # 🔥 تجاهل سطور غير مفيدة
+        if len(line) < 4:
+            continue
+
+        if line in ["LH", "HL", "المختلطة"]:
+            continue
+
+        # 🔥 عنوان
+        if not has_dtc(line):
+            row = table.add_row().cells
+            row[0].text = f"🔹 {line}"
+            row[1].text = ""
+            row[2].text = ""
+            continue
+
+        # 🔥 أعطال
+        parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
+
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+
+            row = table.add_row().cells
+            row[0].text = part
+            row[1].text = ""
+            row[2].text = ""
             # 🔥 تنسيق احترافي
             #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
             #style_cell(row[1], bold=True)
@@ -189,9 +215,6 @@ def fill_template(template_path, output_path, data):
         "{test_time}": data["meta"]["test_time"],
         "{sn}": data["meta"]["sn"],
         "{systems_ok}": "\n".join(data["systems_ok"]),
-        "{systems}": "\n".join(
-            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])
-        )
     }
 
     for key, value in replacements.items():
