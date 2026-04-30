@@ -29,8 +29,7 @@ def build_dtc_text(dtc_list):
         line = f"{d['system']} | {d['code']} | {d['desc']}"  
         lines.append(line)  
 
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 def center_cell(cell):
     # توسيط أفقي
