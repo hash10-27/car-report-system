@@ -387,11 +387,12 @@ def parse(text):
         # 2️⃣ إذا السطر يحتوي على DTC، استخدم العنوان الحالي  
         # 3️⃣ إذا السطر عربي وطويل وَمافيه DTC، فهو عنوان جديد  
         
-        if re.search(r'[؀-ۿ]', line) and \  
-            not re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line) and \  
-            not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي", "رمز خطأ"]) and \  
-            len(line) > 4:  # قللنا الحد من 6 إلى 4  
-            current_title = line.strip()  
+        if (
+            re.search(r'[؀-ۿ]', line)
+            and not re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+            and not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي", "رمز خطأ"])
+            and len(line) > 4
+        ):
         
         dtc_match = re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line)  
         
