@@ -223,20 +223,14 @@ def parse(text):
         title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
         title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
 
-        is_dtc_line = bool(re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', line))
-
         if (
-            not is_dtc_line
-            and re.search(r'[؀-ۿ]', line)
-            and len(line) > 6
-            and not any(x in line for x in ["DTC", "Present", "الحالي", "التاريخ", "غير طبيعي"])
+            re.match(r'^\d+\.', line)
+            and re.search(r'[؀-ۿ]', title_candidate)
+            and not any(x in title_candidate for x in ["DTC", "Present", "الحالي", "التاريخ", "غير طبيعي"])
         ):
-            current_title = line.strip()
-
+            current_title = title_candidate
             if current_title not in data["systems"]:
                 data["systems"][current_title] = []
-
-            print(f"✅ عنوان جديد: '{current_title}'")
 
 
         dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
@@ -263,14 +257,7 @@ def parse(text):
                 if next_line and not re.search(
                     r'[PCBU][0-9A-Z]{4}', next_line
                 ):
-                    if (
-                        next_line
-                        and not re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', next_line)  # 🔥 يمنع DTC جديد
-                        and not any(x in next_line for x in [
-                            "على ما يرام", "DTC", "الأنظمة",
-                            "غير طبيعي", "Present", "الحالي", "التاريخ"
-                        ])
-                    ):
+                    if next_line and not any(x in next_line for x in ["على ما يرام", "DTC", "الأنظمة", "غير طبيعي", "Present", "الحالي", "التاريخ"]):
                         desc += " " + next_line
 
             if any(x in desc for x in ["إخلاء", "المسؤولية", "هذا التقرير", "لا تتحمل", "أي مسؤولية", "LAUNCH", "بيانات", "service"]):
