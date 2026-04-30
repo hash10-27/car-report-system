@@ -131,64 +131,64 @@ def fill_system_tables(doc, faults_raw):
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
-    def has_dtc(line):
-        return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+    for line in faults_raw:
 
-
-    # 🔥 الحالة 1: عنوان
-    if not has_dtc(line):
-
-        if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
+        line = line.strip()
+        if not line:
             continue
 
-        # 🔥 دمج عنوان مقطوع
-        if current_title:
-            if len(line) < 50 or not line.startswith("نظام"):
-                current_title += " " + line
+        def has_dtc(line):
+            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+
+        # 🔥 الحالة 1: عنوان
+        if not has_dtc(line):
+
+            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
 
-        # 🔥 عنوان جديد
-        current_title = line.strip()
+            if current_title:
+                if len(line) < 50 or not line.startswith("نظام"):
+                    current_title += " " + line
+                    continue
 
-        row = table.add_row().cells
-        row[0].text = f"🔹 {current_title}"
-        row[1].text = ""
-        row[2].text = ""
+            current_title = line.strip()
 
-        style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-        center_cell(row[0])
-        continue
+            row = table.add_row().cells
+            row[0].text = f"🔹 {current_title}"
+            row[1].text = ""
+            row[2].text = ""
 
-
-    # 🔥 الحالة 2: DTC (مهم يكون خارج if)
-    parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
-
-    for part in parts:
-        part = part.strip()
-        if not part:
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            center_cell(row[0])
             continue
 
-        m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
-        if not m:
-            continue
+        # 🔥 الحالة 2: DTC
+        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
 
-        row = table.add_row().cells
-        title_to_use = current_title or 'غير محدد'
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
 
-        row[0].text = title_to_use
-        row[1].text = m.group(0).replace('.', '')
+            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+            if not m:
+                continue
 
-        desc = part[m.end():].strip()
-        desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+            row = table.add_row().cells
+            title_to_use = current_title or 'غير محدد'
 
-        row[2].text = desc
+            row[0].text = title_to_use
+            row[1].text = m.group(0).replace('.', '')
 
-        style_cell(row[0], bold=True)
-        center_cell(row[0])
-        center_cell(row[1])
-        center_cell(row[2])
+            desc = part[m.end():].strip()
+            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
 
+            row[2].text = desc
 
+            style_cell(row[0], bold=True)
+            center_cell(row[0])
+            center_cell(row[1])
+            center_cell(row[2])
 # 🔹 تعبئة القالب
 
 def fill_template(template_path, output_path, data):
