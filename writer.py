@@ -59,17 +59,6 @@ def format_systems(systems):
         return "لا يوجد"
     return "\n".join(systems)
 
-def build_systems_text(systems):
-    if not systems:  
-        return "لا يوجد أعطال"  
-
-    text = ""  
-    for system, dtcs in systems.items():
-        text += f"\n{system}\n"
-
-        for d in dtcs:
-            text += f"{d['code']} {d['desc']}\n"  
-    return text.strip()
 
 def fill_ok_systems_table(doc, systems_ok):
     # 📌 اختر الجدول المناسب (آخر جدول)  
@@ -124,71 +113,67 @@ def extract_raw_dtc_block(text):
 
     return "\n".join(result)
 
+def build_dtc_text(dtc_list):
+    if not dtc_list:
+        return "لا يوجد أعطال"
+    lines = []
+    for d in dtc_list:
+        system = d.get('system') or d.get('title') or 'غير محدد'
+        line = f"{system} | {d.get('code','')} | {d.get('desc','')}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def fill_system_tables(doc, faults_raw):
-    import re
-    
-    table = doc.tables[1]  
-    
-    def has_dtc(line):  
-        return re.search(r'd+.[0-9A-Z]{4}[PCBU]', line)  
-    
-    # 🔥 🔥 🔥 تهيئة المتغير قبل الحلقة (مشكلة رئيسية كانت حاططة)
-    current_title = ""  
-    
-    # 🔥 🔥 🔥 إصلاح الاندنتيشن - هذا خارج def has_dtc
-    if isinstance(faults_raw, str):  
-        faults_raw = faults_raw.splitlines()  
+    table = doc.tables[1]
+    current_title = ""
 
-    for line in faults_raw:  
-        line = line.strip()  
+    if isinstance(faults_raw, str):
+        faults_raw = faults_raw.splitlines()
 
-        if not line:  
-            continue  
+    def has_dtc(line):
+        return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-        # 🔥 تجاهل سطور غير مفيدة  
-        if len(line) < 4:  
-            continue  
-
-        if line in ["LH", "HL", "المختلطة"]:  
-            continue  
+    for line in faults_raw:
+        line = line.strip()
+        if not line:
+            continue
+        if line in ["LH", "HL", "المختلطة"]:
+            continue
 
         if not has_dtc(line):
-            # 🔥 هذا عنوان قسم جديد
-            current_title = line.strip()  
-            print(f"✅ عنوان جديد: '{current_title}'")  # Debug
-
-            row = table.add_row().cells  
-            row[0].text = f"🔹 {line}"  
-            row[1].text = ""  
-            row[2].text = ""  
-            
-            # 🔥 تنسيق العنوان
+            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
+                continue
+            current_title = line.strip()
+            row = table.add_row().cells
+            row[0].text = f"🔹 {current_title}"
+            row[1].text = ""
+            row[2].text = ""
             style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
             center_cell(row[0])
-            
-            continue  
+            continue
 
-        # 🔥 أعطال - استخدم العنوان الحالي
-        parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line) 
-
-        for part in parts:  
-            part = part.strip()  
-            if not part:  
-                continue  
-
+        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+            if not m:
+                continue
             row = table.add_row().cells
-            
-            # 🔥 🔥 🔥 تأكد من وجود العنوان
-            title_to_use = current_title.strip() if current_title else "غير محدد"
-            print(f"⚠️ أعطال بعنوان: '{title_to_use}' | جزء: '{part}'")  # Debug
-            
-            row[0].text = f"{title_to_use} | {part}"  
-            row[1].text = ""  
-            row[2].text = ""  
-            
-            # تنسيق
+            title_to_use = current_title or 'غير محدد'
+            row[0].text = title_to_use
+            row[1].text = m.group(0).replace('.', '') if m else ''
+            desc = part[m.end():].strip()
+            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+            row[2].text = desc
             style_cell(row[0], bold=True)
             center_cell(row[0])
+            center_cell(row[1])
+            center_cell(row[2])
+
+
 
 # 🔹 تعبئة القالب
 
