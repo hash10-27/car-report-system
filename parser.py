@@ -117,7 +117,7 @@ def parse(text):
     data = {"car_info": {"year": "", "make": "", "model": "", "vin": "", "engine": "", "mileage": ""},
             "customer_info": {"customer": "", "technician": "", "phone": ""},
             "meta": {"car_version": "", "app_version": "", "test_time": "", "sn": ""},
-            "systems": {}, "systems_ok": [], "faults_raw": []}
+            "systems": {}, "systems_ok": [], "faults_raw": [], "dtc": []}
     text_clean = re.sub(r'[‎‏‪-‮]', '', text)
     text_clean = re.sub(r'\s+', ' ', text_clean)
     car_ver = re.search(r'V\d+\.\d+', text_clean)
