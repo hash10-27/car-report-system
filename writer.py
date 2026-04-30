@@ -146,9 +146,7 @@ def fill_system_tables(doc, faults_raw):
             # ❌ تجاهل سطور غير مفيدة
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
-            if len(table.rows) > 0:
-                last_row = table.rows[-1].cells
-                last_row[2].text += " " + line
+
 
             # 🔥 إذا عندنا عنوان سابق → احتمال يكون هذا تكملة وصف
             if current_title:
