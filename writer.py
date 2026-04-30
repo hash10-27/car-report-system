@@ -156,7 +156,6 @@ def fill_system_tables(doc, faults_raw):
             # 🔥 هذا عنوان قسم جديد
             current_title = line.strip()  
             print(f"✅ عنوان جديد: '{current_title}'")  # Debug
-            clean_title = re.sub(r'^\d+\.\s*', '', line).strip()
 
             row = table.add_row().cells  
             row[0].text = f"🔹 {line}"  
@@ -172,35 +171,24 @@ def fill_system_tables(doc, faults_raw):
         # 🔥 أعطال - استخدم العنوان الحالي
         parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line) 
 
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
+        for part in parts:  
+            part = part.strip()  
+            if not part:  
+                continue  
 
-            dtc_match = re.search(r'(\d+\.[0-9A-Z]{4}[PCBU])', part)
-            if not dtc_match:
-                continue
-
-            raw_code = dtc_match.group(1)
-            code = fix_dtc(raw_code)
-
-            # 🔥 استخراج الوصف
-            desc = part.split(raw_code, 1)[-1].strip()
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-            desc = desc.strip()
-
-            if len(desc) < 3:
-                continue
-
-            # 🔥 طباعة في 3 أعمدة
             row = table.add_row().cells
-
-            row[0].text = ""              # العمود الأول فاضي
-            row[1].text = code            # كود الخطأ
-            row[2].text = desc            # الوصف
-
-            style_cell(row[1])
-            style_cell(row[2])
+            
+            # 🔥 🔥 🔥 تأكد من وجود العنوان
+            title_to_use = current_title.strip() if current_title else "غير محدد"
+            print(f"⚠️ أعطال بعنوان: '{title_to_use}' | جزء: '{part}'")  # Debug
+            
+            row[0].text = f"{title_to_use} | {part}"  
+            row[1].text = ""  
+            row[2].text = ""  
+            
+            # تنسيق
+            style_cell(row[0], bold=True)
+            center_cell(row[0])
 
 # 🔹 تعبئة القالب
 
