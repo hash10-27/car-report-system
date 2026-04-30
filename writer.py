@@ -142,61 +142,57 @@ def extract_raw_dtc_block(text):
 def fill_system_tables(doc, faults_raw):
     import re
 
-    if len(doc.tables) > 1:
-        table = doc.tables[1]
-    else:
-        print("⚠️ لا يوجد جدول كافي")
-        return
+    table = doc.tables[1]
 
     def has_dtc(line):
         return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-    if isinstance(faults_raw, str):
-        faults_raw = faults_raw.splitlines()
+        if isinstance(faults_raw, str):
+            faults_raw = faults_raw.splitlines()
 
-    for line in faults_raw:
-        line = line.strip()
+        for line in faults_raw:
+            line = line.strip()
 
-        if not line:
-            continue
-
-        # 🔥 تجاهل سطور غير مفيدة
-        if len(line) < 4:
-            continue
-
-        if line in ["LH", "HL", "المختلطة"]:
-            continue
-
-        # 🔥 عنوان
-        if not has_dtc(line):
-            row = table.add_row().cells
-            row[0].text = f"🔹 {line}"
-            row[1].text = ""
-            row[2].text = ""
-            continue
-
-        # 🔥 أعطال
-        parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
-
-        for part in parts:
-            part = part.strip()
-            if not part:
+            if not line:
                 continue
 
-            row = table.add_row().cells
-            row[0].text = part
-            row[1].text = ""
-            row[2].text = ""
-            # 🔥 تنسيق احترافي
-            #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-            #style_cell(row[1], bold=True)
-            #style_cell(row[2])
-            #style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+            # 🔥 تجاهل سطور غير مفيدة
+            if len(line) < 4:
+                continue
 
-            # 🔥 توسيط الخلايا
-            #center_cell(row[0])
-            #center_cell(row[1])
-            #center_cell(row[2])
+            if line in ["LH", "HL", "المختلطة"]:
+                continue
+
+            # 🔥 عنوان
+            if not has_dtc(line):
+                row = table.add_row().cells
+                row[0].text = f"🔹 {line}"
+                row[1].text = ""
+                row[2].text = ""
+                continue
+
+            # 🔥 أعطال
+            parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
+
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+
+                row = table.add_row().cells
+                row[0].text = part
+                row[1].text = ""
+                row[2].text = ""
+                # 🔥 تنسيق احترافي
+                #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
+                #style_cell(row[1], bold=True)
+                #style_cell(row[2])
+                #style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
+
+                # 🔥 توسيط الخلايا
+                #center_cell(row[0])
+                #center_cell(row[1])
+                #center_cell(row[2])
 # 🔹 تعبئة القالب
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
