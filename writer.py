@@ -57,21 +57,18 @@ def fill_dtc_table(doc, dtc_list):
 def format_systems(systems):
     if not systems:
         return "لا يوجد"
-    return "
-".join(systems)
+    return "\n".join(systems)
 
 def build_systems_text(systems):
     if not systems:  
         return "لا يوجد أعطال"  
 
     text = ""  
-    for system, dtcs in systems.items():  
-        text += f"
-{system}
-"  
-        for d in dtcs:  
-            text += f"{d['code']} {d['desc']}
-"  
+    for system, dtcs in systems.items():
+        text += f"\n{system}\n"
+
+        for d in dtcs:
+            text += f"{d['code']} {d['desc']}\n"  
     return text.strip()
 
 def fill_ok_systems_table(doc, systems_ok):
@@ -112,8 +109,7 @@ def style_cell(cell, bold=False, color=None):
                 run.font.color.rgb = color
 
 def extract_raw_dtc_block(text):
-    lines = text.split("
-")
+    lines = text.split("")
     capture = False
     result = []
 
@@ -126,8 +122,7 @@ def extract_raw_dtc_block(text):
         if capture:  
             result.append(line.strip())  
 
-    return "
-".join(result)
+    return "\n".join(result)
 
 def fill_system_tables(doc, faults_raw):
     import re
@@ -217,12 +212,10 @@ def fill_template(template_path, output_path, data):
         "{app_version}": data["meta"]["app_version"],  
         "{test_time}": data["meta"]["test_time"],  
         "{sn}": data["meta"]["sn"],  
-        "{systems_ok}": "
-".join(data["systems_ok"]),  
-        "{systems}": "
-".join(  
-            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])  
-        )  
+        "{systems_ok}": "\n".join(data["systems_ok"]),
+        "{systems}": "\n".join(
+            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])
+        )
     }  
 
     for key, value in replacements.items():  
