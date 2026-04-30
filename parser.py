@@ -377,74 +377,61 @@ def parse(text):
                 data["meta"]["sn"] = sn.group()
 
 
-        # ================================
-        # 🔥 الأعطال (بدون section)
-        # ================================
-        # ✅ التقاط عنوان القسم قبل الأكواد (مثل: التحكم الهجين CH / نظام الفرامل ... )
-        # اعتبر أي سطر عربي طويل نسبيًا ولا يحتوي على نمط كود DTC ولا يحتوي على كلمات مثل "على ما يرام" أو "DTC"
-        if re.search(r'[\u0600-\u06FF]', line) and not re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line) and \
-            not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي"]):
-                # حد بسيط للتمييز: العنوان غالبًا أطول من وصف قصير
-                if len(line) > 6:
-                    current_title = line
-        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PBCU])', line)
-       
-        if dtc_match:
-            raw_code = dtc_match.group(1)
-            code = fix_dtc(raw_code)
-            code = re.sub(r'\.\d+$', '', code)
-
-            desc = line.split(raw_code, 1)[-1].strip()
-
-            # 🔥 حذف كلمات مزعجة
-            desc = re.sub(r'(الحالي|التاريخ)', '', desc)
-
-            # 🔥 حذف الأكواد المكررة داخل الوصف
-            desc = re.sub(r'[0-9]+\.[0-9A-Z]{4}[PBCU]', '', desc)
-
-            # 🔥 قلب النص العربي
-            # 🔥 لا تقلب مرة ثانية (تم قلبه سابقاً)
-            desc = desc.strip()
-
-            if len(desc) < 3:
-                continue
-
-            # دمج السطر التالي
-            if i + 1 < len(lines):
-                next_line = normalize_line(lines[i + 1])
-
-                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):
-                    if not any(x in next_line for x in [
-                        "على ما يرام",
-                        "DTC",
-                        "الأنظمة"
-                    ]):
-                        desc += " " + next_line
-
-            # ❌ تجاهل نصوص ليست أعطال            
-            if any(x in desc for x in [
-                "إخلاء",
-                "المسؤولية",
-                "هذا التقرير",
-                "لا تتحمل",
-                "أي مسؤولية",
-                "LAUNCH",
-                "بيانات",
-                "service",
-            ]):
-                continue
+        # ================================================  
+        # 🔥 الأعطال (بدون section) - مصلّح  
+        # ================================================  
+        
+        # 1️⃣ ابدأ بافتراض بأنه ماعدا عنوان جديد  
+        is_dtc_line = bool(re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line))  
+        
+        # 2️⃣ إذا السطر يحتوي على DTC، استخدم العنوان الحالي  
+        # 3️⃣ إذا السطر عربي وطويل وَمافيه DTC، فهو عنوان جديد  
+        
+        if re.search(r'[؀-ۿ]', line) and \  
+        not re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line) and \  
+        not any(x in line for x in ["على ما يرام", "DTC", "غير طبيعي", "رمز خطأ"]) and \  
+        len(line) > 4:  # قللنا الحد من 6 إلى 4  
+            current_title = line.strip()  
+        
+        dtc_match = re.search(r'([0-9]+.[0-9A-Z]{4}[PBCU])', line)  
+        
+        if dtc_match:  
+            raw_code = dtc_match.group(1)  
+            code = fix_dtc(raw_code)  
+            code = re.sub(r'.d+$', '', code)  
             
-            if "dtc" not in data:
-                data["dtc"] = []
-
-            data["dtc"].append({
-                "code": code,
-                "desc": desc.strip(),
-                "title": current_title.strip()
-            })
-            print("LINE >>>", line)
-            print("MATCH >>>", dtc_match)
-
+            desc = line.split(raw_code, 1)[-1].strip()  
+            desc = re.sub(r'(الحالي|التاريخ)', '', desc)  
+            desc = re.sub(r'[0-9]+.[0-9A-Z]{4}[PBCU]', '', desc)  
+            desc = desc.strip()  
+            
+            if len(desc) < 3:  
+                continue  
+            
+            # دمج السطر التالي (نفس المنطق القديم)  
+            if i + 1 < len(lines):  
+                next_line = normalize_line(lines[i + 1])  
+                if next_line and not re.search(r'[PCBU][0-9A-Z]{4}', next_line):  
+                    if not any(x in next_line for x in ["على ما يرام", "DTC", "الأنظمة"]):  
+                        desc += " " + next_line  
+            
+            if any(x in desc for x in ["إخلاء", "المسؤولية", "هذا التقرير", "لا تتحمل", "أي مسؤولية", "LAUNCH", "بيانات", "service"]):  
+                continue  
+            
+            if "dtc" not in data:  
+                data["dtc"] = []  
+            
+            # 🔥 🔥 🔥 IMPORTANT: تأكد أن title مش فاضي  
+            title_to_use = current_title.strip() if current_title else ""  
+            
+            data["dtc"].append({  
+                "code": code,  
+                "desc": desc.strip(),  
+                "title": title_to_use  
+            })  
+            
+            # Debug: اختبر العنوان  
+            print(f"TITLE >>> '{title_to_use}' | CODE >>> {code}")
         # ================================
         # ✅ الأنظمة السليمة
         # ================================

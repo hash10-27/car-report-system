@@ -6,111 +6,103 @@ from docx.shared import RGBColor, Pt
 import re
 
 # 🔹 استبدال النص داخل الفقرات والجداول
+
 def replace_all(doc, key, value):
     # الفقرات
     for p in doc.paragraphs:
         if key in p.text:
             p.text = p.text.replace(key, value)
 
-    # الجداول
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                if key in cell.text:
+    # الجداول  
+    for table in doc.tables:  
+        for row in table.rows:  
+            for cell in row.cells:  
+                if key in cell.text:  
                     cell.text = cell.text.replace(key, value)
 
 def build_dtc_text(dtc_list):
     if not dtc_list:
         return "لا يوجد أعطال"
 
-    lines = []
+    lines = []  
+    for d in dtc_list:  
+        line = f"{d['system']} | {d['code']} | {d['desc']}"  
+        lines.append(line)  
 
-    for d in dtc_list:
-        line = f"{d['system']} | {d['code']} | {d['desc']}"
-        lines.append(line)
-
-    return "\n".join(lines)
+    return "
+".join(lines)
 
 def center_cell(cell):
     # توسيط أفقي
     for paragraph in cell.paragraphs:
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # توسيط عمودي
-    tc = cell._element
-    tcPr = tc.get_or_add_tcPr()
-    vAlign = OxmlElement('w:vAlign')
-    vAlign.set(qn('w:val'), 'center')
+    # توسيط عمودي  
+    tc = cell._element  
+    tcPr = tc.get_or_add_tcPr()  
+    vAlign = OxmlElement('w:vAlign')  
+    vAlign.set(qn('w:val'), 'center')  
     tcPr.append(vAlign)
 
 # 🔹 تحويل قائمة DTC إلى نص مرتب
+
 def fill_dtc_table(doc, dtc_list):
+    table = doc.tables[1]  # أول جدول في القالب  
 
-    table = doc.tables[i + 1] # أول جدول في القالب
-
-    for d in dtc_list:
-        row_cells = table.add_row().cells
-
-        row_cells[0].text = d["system"]
-        row_cells[1].text = d["code"]
+    for d in dtc_list:  
+        row_cells = table.add_row().cells  
+        row_cells[0].text = d["system"]  
+        row_cells[1].text = d["code"]  
         row_cells[2].text = d["desc"]
-
 
 def format_systems(systems):
     if not systems:
         return "لا يوجد"
-
-    return "\n".join(systems)
-
+    return "
+".join(systems)
 
 def build_systems_text(systems):
+    if not systems:  
+        return "لا يوجد أعطال"  
 
-    if not systems:
-        return "لا يوجد أعطال"
-
-    text = ""
-
-    for system, dtcs in systems.items():
-
-        text += f"\n{system}\n"
-
-        for d in dtcs:
-            text += f"{d['code']} {d['desc']}\n"
-
+    text = ""  
+    for system, dtcs in systems.items():  
+        text += f"
+{system}
+"  
+        for d in dtcs:  
+            text += f"{d['code']} {d['desc']}
+"  
     return text.strip()
 
 def fill_ok_systems_table(doc, systems_ok):
+    # 📌 اختر الجدول المناسب (آخر جدول)  
+    table = doc.tables[-1]  
 
-    # 📌 اختر الجدول المناسب (مثلاً آخر جدول)
-    table = doc.tables[-1]
+    for system in systems_ok:  
+        # ❌ فلتر نهائي  
+        if any(x in system for x in [  
+            "إخلاء المسؤولية",  
+            "هذا التقرير",  
+            "بيانات",  
+            "LAUNCH"  
+        ]):  
+            continue  
 
-    for system in systems_ok:
+        row = table.add_row().cells  
+        clean_name = re.sub(r'^d+.', '', system).strip()  
+        row[0].text = clean_name  
+        row[1].text = "✔"  
 
-        # ❌ فلتر نهائي
-        if any(x in system for x in [
-            "إخلاء المسؤولية",
-            "هذا التقرير",
-            "بيانات",
-            "LAUNCH"
-        ]):
-            continue
+        # تنسيق  
+        style_cell(row[0])  
+        style_cell(row[1], bold=True, color=RGBColor(0, 150, 0))  
 
-        row = table.add_row().cells
-
-        clean_name = re.sub(r'^\d+\.', '', system).strip()
-
-        row[0].text = clean_name
-        row[1].text = "✔"
-
-          # تنسيق
-        style_cell(row[0])
-        style_cell(row[1], bold=True, color=RGBColor(0, 150, 0))
-
-        # 🔥 توسيط
-        for cell in row:
-            for p in cell.paragraphs:
+        # 🔥 توسيط  
+        for cell in row:  
+            for p in cell.paragraphs:  
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
+
 def style_cell(cell, bold=False, color=None):
     for p in cell.paragraphs:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -121,138 +113,149 @@ def style_cell(cell, bold=False, color=None):
                 run.font.color.rgb = color
 
 def extract_raw_dtc_block(text):
-    lines = text.split("\n")
+    lines = text.split("
+")
     capture = False
     result = []
 
-    for line in lines:
+    for line in lines:  
+        if "رمز خطأ النظام" in line:  
+            capture = True  
+            continue  
+        if "على ما يرام" in line:  
+            break  
+        if capture:  
+            result.append(line.strip())  
 
-        if "رمز خطأ النظام" in line:
-            capture = True
-            continue
-
-        if "على ما يرام" in line:
-            break
-
-        if capture:
-            result.append(line.strip())
-
-    return "\n".join(result)
+    return "
+".join(result)
 
 def fill_system_tables(doc, faults_raw):
     import re
+    
+    table = doc.tables[1]  
+    
+    def has_dtc(line):  
+        return re.search(r'd+.[0-9A-Z]{4}[PCBU]', line)  
+    
+    # 🔥 🔥 🔥 تهيئة المتغير قبل الحلقة (مشكلة رئيسية كانت حاططة)
+    current_title = ""  
+    
+    # 🔥 🔥 🔥 إصلاح الاندنتيشن - هذا خارج def has_dtc
+    if isinstance(faults_raw, str):  
+        faults_raw = faults_raw.splitlines()  
 
-    table = doc.tables[1]
+    for line in faults_raw:  
+        line = line.strip()  
 
-    def has_dtc(line):
-        return re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+        if not line:  
+            continue  
 
-        if isinstance(faults_raw, str):
-            faults_raw = faults_raw.splitlines()
+        # 🔥 تجاهل سطور غير مفيدة  
+        if len(line) < 4:  
+            continue  
 
-        for line in faults_raw:
-            line = line.strip()
+        if line in ["LH", "HL", "المختلطة"]:  
+            continue  
 
-            if not line:
-                continue
+        if not has_dtc(line):
+            # 🔥 هذا عنوان قسم جديد
+            current_title = line.strip()  
+            print(f"✅ عنوان جديد: '{current_title}'")  # Debug
 
-            # 🔥 تجاهل سطور غير مفيدة
-            if len(line) < 4:
-                continue
+            row = table.add_row().cells  
+            row[0].text = f"🔹 {line}"  
+            row[1].text = ""  
+            row[2].text = ""  
+            
+            # 🔥 تنسيق العنوان
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            center_cell(row[0])
+            
+            continue  
 
-            if line in ["LH", "HL", "المختلطة"]:
-                continue
+        # 🔥 أعطال - استخدم العنوان الحالي
+        parts = re.split(r'(?=d+.[0-9A-Z]{4}[PCBU])', line)  
 
-            if not has_dtc(line):
-                current_title = line
+        for part in parts:  
+            part = part.strip()  
+            if not part:  
+                continue  
 
-                row = table.add_row().cells
-                row[0].text = f"🔹 {line}"
-                row[1].text = ""
-                row[2].text = ""
+            row = table.add_row().cells
+            
+            # 🔥 🔥 🔥 تأكد من وجود العنوان
+            title_to_use = current_title.strip() if current_title else "غير محدد"
+            print(f"⚠️ أعطال بعنوان: '{title_to_use}' | جزء: '{part}'")  # Debug
+            
+            row[0].text = f"{title_to_use} | {part}"  
+            row[1].text = ""  
+            row[2].text = ""  
+            
+            # تنسيق
+            style_cell(row[0], bold=True)
+            center_cell(row[0])
 
-                continue
-
-            # 🔥 أعطال
-            parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU])', line)
-
-            for part in parts:
-                part = part.strip()
-                if not part:
-                    continue
-
-                row = table.add_row().cells
-                row[0].text = f"{current_title} | {part}"
-                row[1].text = ""
-                row[2].text = ""
-                # 🔥 تنسيق احترافي
-                #style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  # أزرق
-                #style_cell(row[1], bold=True)
-                #style_cell(row[2])
-                #style_cell(row[1], bold=True, color=RGBColor(200, 0, 0))  # الكود أحمر 
-
-                # 🔥 توسيط الخلايا
-                #center_cell(row[0])
-                #center_cell(row[1])
-                #center_cell(row[2])
 # 🔹 تعبئة القالب
+
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
     fill_ok_systems_table(doc, data["systems_ok"])
 
-    replacements = {
-        "{year}": data["car_info"]["year"],
-        "{make}": data["car_info"]["make"],
-        "{model}": data["car_info"]["model"],
-        "{vin}": data["car_info"]["vin"],
-        "{engine}": data["car_info"]["engine"],
-        "{mileage}": data["car_info"]["mileage"],
+    replacements = {  
+        "{year}": data["car_info"]["year"],  
+        "{make}": data["car_info"]["make"],  
+        "{model}": data["car_info"]["model"],  
+        "{vin}": data["car_info"]["vin"],  
+        "{engine}": data["car_info"]["engine"],  
+        "{mileage}": data["car_info"]["mileage"],  
 
-        "{customer}": data["customer_info"]["customer"],
-        "{technician}": data["customer_info"]["technician"],
-        "{phone}": data["customer_info"]["phone"],
+        "{customer}": data["customer_info"]["customer"],  
+        "{technician}": data["customer_info"]["technician"],  
+        "{phone}": data["customer_info"]["phone"],  
 
-        "{car_version}": data["meta"]["car_version"],
-        "{app_version}": data["meta"]["app_version"],
-        "{test_time}": data["meta"]["test_time"],
-        "{sn}": data["meta"]["sn"],
-        "{systems_ok}": "\n".join(data["systems_ok"]),
-        "{systems}": "\n".join(
-            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])
-        )
-    }
+        "{car_version}": data["meta"]["car_version"],  
+        "{app_version}": data["meta"]["app_version"],  
+        "{test_time}": data["meta"]["test_time"],  
+        "{sn}": data["meta"]["sn"],  
+        "{systems_ok}": "
+".join(data["systems_ok"]),  
+        "{systems}": "
+".join(  
+            f"{d['code']} {d['desc']}" for d in data.get("dtc", [])  
+        )  
+    }  
 
-    for key, value in replacements.items():
-        replace_all(doc, key, str(value))
+    for key, value in replacements.items():  
+        replace_all(doc, key, str(value))  
 
-    fill_system_tables(doc, data["faults_raw"])
+    fill_system_tables(doc, data["faults_raw"])  
 
-    # 🔥 تنسيق جدول معلومات السيارة
-    table = doc.tables[0]  # أول جدول (حق معلومات السيارة)
+    # 🔥 تنسيق جدول معلومات السيارة  
+    table = doc.tables[0]  
 
-    for row in table.rows:
-        for i, cell in enumerate(row.cells):
+    for row in table.rows:  
+        for i, cell in enumerate(row.cells):  
+            # 🔵 العمود الثاني = القيم  
+            if i == 1:  
+                for p in cell.paragraphs:  
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER  
+                    for run in p.runs:  
+                        run.bold = True  
+                        run.font.color.rgb = RGBColor(0, 102, 204)  
 
-            # 🔵 العمود الثاني = القيم
-            if i == 1:
-                for p in cell.paragraphs:
-                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    for run in p.runs:
-                        run.bold = True
-                        run.font.color.rgb = RGBColor(0, 102, 204)
+            # ⚫ العمود الأول = العناوين  
+            else:  
+                for p in cell.paragraphs:  
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER  
+                    for run in p.runs:  
+                        run.bold = True  
 
-            # ⚫ العمود الأول = العناوين
-            else:
-                for p in cell.paragraphs:
-                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    for run in p.runs:
-                        run.bold = True
-
-            # 🔥 توسيط عمودي
-            tc = cell._element
-            tcPr = tc.get_or_add_tcPr()
-            vAlign = OxmlElement('w:vAlign')
-            vAlign.set(qn('w:val'), 'center')
-            tcPr.append(vAlign)
+            # 🔥 توسيط عمودي  
+            tc = cell._element  
+            tcPr = tc.get_or_add_tcPr()  
+            vAlign = OxmlElement('w:vAlign')  
+            vAlign.set(qn('w:val'), 'center')  
+            tcPr.append(vAlign)  
 
     doc.save(output_path)
