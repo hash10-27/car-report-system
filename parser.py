@@ -117,67 +117,101 @@ def extract_faults_raw(text):
 import re
 def parse(text):
     lines = []
-    for line in text.split("\n"):
+    for line in text.split(""):
         line = normalize_line(line)
         if any('؀' <= c <= 'ۿ' for c in line):
             line = line[::-1]
         lines.append(line)
-    
-    data = {"car_info": {"year": "", "make": "", "model": "", "vin": "", "engine": "", "mileage": ""},
-            "customer_info": {"customer": "", "technician": "", "phone": ""},
-            "meta": {"car_version": "", "app_version": "", "test_time": "", "sn": ""},
-            "systems": {}, "systems_ok": [], "faults_raw": [], "dtc": []}
+
+    data = {
+        "car_info": {"year": "", "make": "", "model": "", "vin": "", "engine": "", "mileage": ""},
+        "customer_info": {"customer": "", "technician": "", "phone": ""},
+        "meta": {"car_version": "", "app_version": "", "test_time": "", "sn": ""},
+        "systems": {},
+        "systems_ok": [],
+        "faults_raw": [],
+        "system_titles": []
+    }
+
     text_clean = re.sub(r'[‎‏‪-‮]', '', text)
     text_clean = re.sub(r'\s+', ' ', text_clean)
+
     car_ver = re.search(r'V\d+\.\d+', text_clean)
     app_ver = re.findall(r'V\d+\.\d+\.\d+', text_clean)
+
     if car_ver:
         data["meta"]["car_version"] = car_ver.group()
     if len(app_ver) > 0:
         data["meta"]["app_version"] = app_ver[-1]
+
     date_match = re.search(r'\d{2}-\d{2}-\d{4}', text_clean)
     time_match = re.search(r'\d{2}:\d{2}:\d{2}', text_clean)
     if date_match and time_match:
         data["meta"]["test_time"] = date_match.group() + " " + time_match.group()
-    in_ok_section = False
 
+    in_ok_section = False
     faults_raw = []
     capture = False
-    system_titles = []
     current_title = ""
+    current_dtc_count = 0
+    pending_title = False
+
+    bad_title_tokens = ("DTC", "Present", "الحالي", "التاريخ", "غير طبيعي", "رمز خطأ النظام", "النظام التالي")
+
+    def looks_like_title(line):
+        s = re.sub(r'^\d+\.\s*', '', line).strip()
+        if not s:
+            return False
+        if any(x in s for x in bad_title_tokens):
+            return False
+        if re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', s):
+            return False
+        if len(s) > 60:
+            return False
+        if re.match(r'^[A-Z0-9\s\(\)\-\/'ء-ي]+$', s) and any(ch.isalpha() for ch in s):
+            return True
+        return True
+
     for i, line in enumerate(lines):
         line = normalize_line(line)
         if not line:
             continue
-        if "غير طبيعي" in line:
+
+        if "غير طبيعي" in line or "النظام التالي" in line:
             capture = True
+            pending_title = False
+            current_dtc_count = 0
+            continue
+
         if "على ما يرام" in line:
             capture = False
+
         if capture:
             faults_raw.append(line)
+
         systems = re.findall(r'(.*?)', line)
         for s in systems:
-            if len(s) <= 5:
-                if s not in data["systems_ok"]:
-                    data["systems_ok"].append(s)
-        if "رمز" in line and "خطأ" in line:
-            in_dtc_section = True
-            continue
+            if len(s) <= 5 and s not in data["systems_ok"]:
+                data["systems_ok"].append(s)
+
         if "على ما يرام" in line:
             in_ok_section = True
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
                 if next_line:
                     clean_next = re.sub(r'^\d+\.', '', next_line).strip()
-                    data["systems_ok"].append(clean_next)
+                    if clean_next not in data["systems_ok"]:
+                        data["systems_ok"].append(clean_next)
             if i + 2 < len(lines):
                 next_line2 = normalize_line(lines[i + 2])
                 if next_line2:
                     clean_next2 = re.sub(r'^\d+\.', '', next_line2).strip()
-                    data["systems_ok"].append(clean_next2)
+                    if clean_next2 not in data["systems_ok"]:
+                        data["systems_ok"].append(clean_next2)
             continue
-        clean = fix_arabic_order(line)
-        clean = clean.replace(" ", "")
+
+        clean = fix_arabic_order(line).replace(" ", "")
+
         if "السنة" in clean:
             year = re.search(r'\d{4}', line)
             if year:
@@ -200,17 +234,13 @@ def parse(text):
             parts = re.findall(r'[A-Z0-9\.\+\-]+', clean_engine)
             fixed_parts = []
             for p in parts:
-                if re.search(r'[A-Z]', p):
-                    fixed_parts.append(p[::-1])
-                else:
-                    fixed_parts.append(p)
+                fixed_parts.append(p[::-1] if re.search(r'[A-Z]', p) else p)
             if fixed_parts:
                 data["car_info"]["engine"] = " ".join(sorted(fixed_parts, key=lambda x: (not 'L' in x, len(x))))
         elif "عداد" in clean:
             numbers = re.findall(r'\d+', line)
             if numbers:
-                value = max(numbers, key=len)
-                data["car_info"]["mileage"] = value
+                data["car_info"]["mileage"] = max(numbers, key=len)
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
         elif "اسمالفني" in clean:
@@ -230,48 +260,31 @@ def parse(text):
             if sn:
                 data["meta"]["sn"] = sn.group()
 
-        section_prefixes = (
-            "النظام التالي غير طبيعي",
-            "الأنظمة التالية غير طبيعية",
-            "النظام التالي غير طبيعي:",
-        )
-
-        bad_title_tokens = ("DTC", "Present", "الحالي", "التاريخ", "غير طبيعي")
-
-        if any(p in line for p in section_prefixes):
-            continue
-
-        is_dtc_line = bool(re.search(r'[0-9]+\.[0-9A-Z]{4}[PCBU]', line))
-
-        # 🔥 تنظيف السطر
-        title_candidate = re.sub(r'^\d+\.\s*', '', line).strip()
-        title_candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', title_candidate).strip()
-
-        if re.match(r'^d+.', line) and re.search(r'[؀-ۿ]', title_candidate):
-            if not any(tok in title_candidate for tok in bad_title_tokens):
-                current_title = title_candidate
-                data["systems"].setdefault(current_title, [])
-                continue
-
-
-        dtc_match = re.search(r'([0-9]+.[0-9A-Z]{4}[PCBU])', line)
+        dtc_match = re.search(r'([0-9]+\.[0-9A-Z]{4}[PCBU])', line)
         if dtc_match:
+            if pending_title and current_dtc_count > 0:
+                pending_title = False
             raw_code = dtc_match.group(1)
             code = fix_dtc(raw_code)
             if not code:
                 continue
-
             parts = line.split(raw_code, 1)
             if len(parts) < 2:
                 continue
-
             desc = parts[1].strip()
-            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
-            desc = re.sub(r'\bDTC\b\s*\d*', '', desc)
-            desc = re.sub(r'\s+', ' ', desc)
-
+            desc = re.sub(r'^(الحالي|التاريخ|Present)\s*', '', desc)
+            desc = re.sub(r'DTC\s*\d*', '', desc)
+            desc = re.sub(r'\s+', ' ', desc).strip()
             if len(desc) < 3:
                 continue
+
+            if not current_title or pending_title:
+                if looks_like_title(line):
+                    current_title = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', re.sub(r'^\d+\.\s*', '', line)).strip()
+                    if current_title and current_title not in data["system_titles"]:
+                        data["system_titles"].append(current_title)
+                    data["systems"].setdefault(current_title or "غير محدد", [])
+                    pending_title = False
 
             if i + 1 < len(lines):
                 next_line = normalize_line(lines[i + 1])
@@ -282,33 +295,50 @@ def parse(text):
             if any(x in desc for x in ["إخلاء", "المسؤولية", "هذا التقرير", "لا تتحمل", "أي مسؤولية", "LAUNCH", "بيانات", "service"]):
                 continue
 
+            if "dtc" not in data:
+                data["dtc"] = []
+
+            if current_title and current_title not in data["system_titles"]:
+                data["system_titles"].append(current_title)
+
             item = {"code": code, "desc": desc.strip(), "title": current_title or ""}
             data["dtc"].append(item)
-
             if current_title:
                 data["systems"].setdefault(current_title, []).append(item)
+            current_dtc_count += 1
+            continue
+
+        if re.match(r'^\(?DTC\s*\(?\d+\)?$', line.replace(' ', '')):
+            pending_title = True
+            continue
+
+        if looks_like_title(line) and not re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line):
+            candidate = re.sub(r'^\d+\.\s*', '', line).strip()
+            candidate = re.sub(r'^[^؀-ۿA-Za-z0-9]+', '', candidate).strip()
+            if candidate and not any(x in candidate for x in bad_title_tokens):
+                current_title = candidate
+                if current_title not in data["system_titles"]:
+                    data["system_titles"].append(current_title)
+                data["systems"].setdefault(current_title, [])
+                current_dtc_count = 0
+                pending_title = False
+                continue
+
         if in_ok_section:
             if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', line):
                 break
-            if i > 0 and "على ما يرام" in lines[i-1]:
-                pass
             clean_line = re.sub(r'^\d+\.', '', line).strip()
-            if not clean_line:
-                continue
-            if "DTC" in line:
+            if not clean_line or "DTC" in line:
                 continue
             added = False
             if re.match(r'^[A-Z0-9\s\.]+$', clean_line):
                 if clean_line not in data["systems_ok"]:
                     data["systems_ok"].append(clean_line)
                 added = True
-            if added:
-                continue
-            if len(clean_line) > 100:
-                continue
-            if any(x in clean_line for x in ["هذا التقرير", "بيانات", "LAUNCH"]):
+            if added or len(clean_line) > 100 or any(x in clean_line for x in ["هذا التقرير", "بيانات", "LAUNCH"]):
                 continue
             if clean_line not in data["systems_ok"]:
                 data["systems_ok"].append(clean_line)
+
     data["faults_raw"] = faults_raw
     return data
