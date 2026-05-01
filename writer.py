@@ -123,46 +123,80 @@ def build_dtc_text(dtc_list):
         lines.append(line)
     return "\n".join(lines)
 
-
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
     current_title = ""
+    current_title_tokens = []
 
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
-    for line in faults_raw:
+    def clean_line(s):
+        return re.sub(r'^\s*\d+\.?\s*', '', s).strip()
 
-        line = line.strip()
+    def has_dtc(line):
+        return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+
+    def is_noise(s):
+        s = clean_line(s)
+        return (
+            not s or
+            s in ["LH", "HL", "المختلطة"] or
+            "غير طبيعي" in s or
+            s == "DTC" or
+            s.startswith("DTC ") or
+            s.startswith("Present") or
+            s.startswith("الحالي") or
+            s.startswith("التاريخ") or
+            "رمز خطأ النظام" in s
+        )
+
+    def is_title_candidate(s):
+        s = clean_line(s)
+        if is_noise(s):
+            return False
+        if has_dtc(s):
+            return False
+        if len(s) < 3:
+            return False
+        if re.match(r'^[0-9A-Z\s\(\)\/\-\+\._]+$', s):
+            return False
+        return True
+
+    def append_title_piece(title, piece):
+        piece = clean_line(piece)
+        if not piece:
+            return title
+        if not title:
+            return piece
+        if title.endswith(piece):
+            return title
+        return title + " " + piece
+
+    for line in faults_raw:
+        line = clean_line(line)
         if not line:
             continue
 
-        def has_dtc(line):
-            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
-
-        # 🔥 الحالة 1: عنوان
-        if not has_dtc(line):
-
-            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
-                continue
-
-            if current_title:
-                if len(line) < 50 or not line.startswith("نظام"):
-                    current_title += " " + line
-                    continue
-
-            current_title = line.strip()
-
-            row = table.add_row().cells
-            row[0].text = f"🔹 {current_title}"
-            row[1].text = ""
-            row[2].text = ""
-
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-            center_cell(row[0])
+        if is_noise(line):
             continue
 
-        # 🔥 الحالة 2: DTC
+        if not has_dtc(line):
+            if is_title_candidate(line):
+                if current_title and (len(line) <= 25 or not any(ch.isalpha() for ch in line)):
+                    current_title = append_title_piece(current_title, line)
+                else:
+                    current_title = line
+
+                current_title_tokens = current_title.split()
+                row = table.add_row().cells
+                row[0].text = f"🔹 {current_title}"
+                row[1].text = ""
+                row[2].text = ""
+                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+                center_cell(row[0])
+            continue
+
         parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
 
         for part in parts:
@@ -176,12 +210,12 @@ def fill_system_tables(doc, faults_raw):
 
             row = table.add_row().cells
             title_to_use = current_title or 'غير محدد'
-
             row[0].text = title_to_use
             row[1].text = m.group(0).replace('.', '')
 
             desc = part[m.end():].strip()
-            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+            desc = re.sub(r'^(الحالي|التاريخ|Present)\s*', '', desc)
+            desc = re.sub(r'\s+', ' ', desc).strip()
 
             row[2].text = desc
 
@@ -189,6 +223,7 @@ def fill_system_tables(doc, faults_raw):
             center_cell(row[0])
             center_cell(row[1])
             center_cell(row[2])
+
 # 🔹 تعبئة القالب
 
 def fill_template(template_path, output_path, data):
