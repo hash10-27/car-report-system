@@ -141,20 +141,37 @@ def fill_system_tables(doc, faults_raw):
             return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
         # 🔥 الحالة 1: عنوان
+        # 🔥 الحالة 1: عنوان
         if not has_dtc(line):
 
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
 
-            current_title = line.strip()
+            # 🔥 تحديد هل هذا عنوان حقيقي
+            is_new_title = (
+                line.startswith("نظام")
+                or re.match(r'^[\u0600-\u06FF\s]+[A-Z]{2,}', line)  # عربي + رمز مثل SRS / ABS
+            )
 
-            row = table.add_row().cells
-            row[0].text = f"🔹 {current_title}"
-            row[1].text = ""
-            row[2].text = ""
+            if is_new_title:
+                current_title = line.strip()
 
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-            center_cell(row[0])
+                # 🔥 اطبع العنوان مرة واحدة فقط
+                row = table.add_row().cells
+                row[0].text = f"🔹 {current_title}"
+                row[1].text = ""
+                row[2].text = ""
+
+                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+                center_cell(row[0])
+
+                continue
+
+            # 🔥 غير ذلك = تكملة وصف أو تجاهل
+            if len(table.rows) > 1:
+                last_row = table.rows[-1].cells
+                last_row[2].text += " " + line
+
             continue
 
         # 🔥 الحالة 2: DTC
