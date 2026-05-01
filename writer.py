@@ -143,21 +143,23 @@ def fill_system_tables(doc, faults_raw):
         # 🔥 الحالة 1: عنوان
         if not has_dtc(line):
 
+            # ❌ تجاهل أي سطر يحتوي كلمات الخطأ
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
 
-            if current_title:
-                if (
-                    len(line.split()) <= 4              # قصير = غالبًا تكملة عنوان
-                    and not re.search(r'\d', line)      # ما يحتوي أرقام
-                    and not has_dtc(line)               # ليس كود DTC
-                    and not any(x in line for x in [
-                        "الحالي", "التاريخ", "Present", "DTC", "غير طبيعي"
-                    ])
-                ):
-                    current_title += " " + line
-                    continue
+            # ❌ إذا فيه أرقام → غالبًا وصف
+            if re.search(r'\d', line):
+                continue
 
+            # ❌ إذا طويل → وصف
+            if len(line.split()) > 5:
+                continue
+
+            # ❌ إذا فيه كلمات تدل وصف
+            if any(x in line for x in ["دائرة", "عطل", "خطأ", "مفتوحة"]):
+                continue
+
+            # ✅ فقط الآن يعتبر عنوان
             current_title = line.strip()
 
             row = table.add_row().cells
