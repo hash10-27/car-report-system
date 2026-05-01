@@ -113,7 +113,7 @@ def extract_faults_raw(text):
         result.append(line)
 
     return result
-    
+
 import re
 def parse(text):
     lines = []
@@ -143,6 +143,7 @@ def parse(text):
 
     faults_raw = []
     capture = False
+    system_titles = []
     current_title = ""
     for i, line in enumerate(lines):
         line = normalize_line(line)
