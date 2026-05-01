@@ -134,6 +134,8 @@ def fill_system_tables(doc, faults_raw):
     for line in faults_raw:
 
         line = line.strip()
+        print(f"\n🔹 LINE: {line}") 
+        
         if not line:
             continue
 
