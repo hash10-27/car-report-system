@@ -131,17 +131,18 @@ def fill_system_tables(doc, faults_raw):
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
-    for line in faults_raw:
+    def has_dtc(line):
+        return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-        line = line.strip()
+
+    for line in faults_raw:
         print(f"\n🔹 LINE: {line}") 
 
+        line = line.strip()
         if not line:
             continue
 
-        def has_dtc(line):
-            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
-
+        
         # 🔥 الحالة 1: عنوان
         if not has_dtc(line):
 
