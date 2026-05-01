@@ -168,7 +168,7 @@ def parse(text):
             return False
         if len(s) > 60:
             return False
-        if re.match(r'^[A-Z0-9\s\(\)\-\/'ء-ي]+$', s) and any(ch.isalpha() for ch in s):
+        if re.match(r"^[A-Z0-9\s\(\)\-\/'ء-ي]+$", s) and any(ch.isalpha() for ch in s):
             return True
         return True
 
