@@ -146,11 +146,6 @@ def fill_system_tables(doc, faults_raw):
             if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
 
-            if current_title:
-                if len(line) < 50 or not line.startswith("نظام"):
-                    current_title += " " + line
-                    continue
-
             current_title = line.strip()
 
             row = table.add_row().cells
