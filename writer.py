@@ -93,17 +93,20 @@ def extract_raw_dtc_block(text):
             result.append(line.strip())
     return "".join(result)
 
-
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
+
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
     def clean_line(s):
-        return re.sub(r'^\s*\d+\.?\s*', '', s).strip()
+        return re.sub(r'^s*d+.?s*', '', s).strip()
 
     def has_dtc(line):
-        return bool(re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line) or re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line))
+        return bool(
+            re.search(r'd+.[0-9A-Z]{4}[PCBU]', line) or
+            re.search(r'd+.d+[A-Z0-9]{4}[PCBU]', line)
+        )
 
     def is_noise(s):
         s = clean_line(s)
@@ -126,17 +129,11 @@ def fill_system_tables(doc, faults_raw):
             return False
         if len(s) < 3:
             return False
-        if re.match(r'^[0-9A-Z\s\(\)\/\-\+\._]+$', s):
+        if re.match(r'^[0-9A-Zs()/-+._]+$', s):
             return False
         return True
 
-    def normalize_title(s):
-        s = clean_line(s)
-        return re.sub(r'\s+', ' ', s)
-
     current_title = ""
-    title_row_index = None
-    title_locked = False
 
     for line in faults_raw:
         line = clean_line(line)
@@ -144,55 +141,50 @@ def fill_system_tables(doc, faults_raw):
             continue
 
         if not has_dtc(line) and is_title_line(line):
-            cand = normalize_title(line)
-            if current_title and title_locked:
-                if title_row_index is not None and title_row_index < len(table.rows):
-                    if len(cand) <= 25 and not cand.startswith("(DTC"):
-                        current_title = (current_title + " " + cand).strip()
-                        table.rows[title_row_index].cells[0].text = f"🔹 {current_title}"
-                        continue
-
-            current_title = cand
-            title_locked = True
+            current_title = line
             row = table.add_row().cells
             row[0].text = f"🔹 {current_title}"
             row[1].text = ""
             row[2].text = ""
-            title_row_index = len(table.rows) - 1
             style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
             center_cell(row[0])
             continue
 
-        if re.match(r'^\(?DTC\s*\(?\d+\)?$', line.replace(' ', '')):
-            title_locked = False
+        if re.match(r'^(?DTCs*(?d+)?$', line.replace(' ', '')):
             continue
 
         if has_dtc(line):
-            parts = re.split(r'(?=\d+\.[0-9A-Z]{4}[PCBU]|\d+\.\d+[A-Z0-9]{4}[PCBU])', line)
+            parts = re.split(r'(?=d+.[0-9A-Z]{4}[PCBU]|d+.d+[A-Z0-9]{4}[PCBU])', line)
+
             for part in parts:
                 part = part.strip()
                 if not part:
                     continue
-                m = re.search(r'(\d+\.[0-9A-Z]{4}[PCBU]|\d+\.\d+[A-Z0-9]{4}[PCBU])', part)
+
+                m = re.search(r'(d+.[0-9A-Z]{4}[PCBU]|d+.d+[A-Z0-9]{4}[PCBU])', part)
                 if not m:
                     continue
+
                 code = fix_dtc(m.group(1))
                 if not code:
                     continue
+
                 desc = part[m.end():].strip()
-                desc = re.sub(r'^(الحالي|التاريخ|Present)\s*', '', desc)
-                desc = re.sub(r'\s+', ' ', desc).strip()
-                if len(desc) < 3:
+                desc = re.sub(r'^(الحالي|التاريخ|Present)s*', '', desc)
+                desc = re.sub(r's+', ' ', desc).strip()
+
+                if len(desc) < 2:
                     continue
+
                 row = table.add_row().cells
-                row[0].text = current_title or 'غير محدد'
+                row[0].text = current_title or "غير محدد"
                 row[1].text = code
                 row[2].text = desc
+
                 style_cell(row[0], bold=True)
                 center_cell(row[0])
                 center_cell(row[1])
                 center_cell(row[2])
-
 
 def fill_template(template_path, output_path, data):
     doc = Document(template_path)
