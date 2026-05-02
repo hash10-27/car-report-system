@@ -2,6 +2,7 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from parser import fix_dtc
 from docx.shared import RGBColor, Pt
 import re
 
@@ -128,24 +129,6 @@ def build_dtc_text(dtc_list):
         line = f"{system} | {d.get('code','')} | {d.get('desc','')}"
         lines.append(line)
     return "\n".join(lines)
-
-def fix_dtc(code):
-    if not code:
-        return ""
-
-    code = code.strip().replace(".", "")
-
-    # ✅ إذا الكود صحيح (يبدأ بحرف)
-    if re.match(r'^[PCBU][0-9]{4}$', code):
-        return code
-
-    # 🔄 إذا كان مقلوب (ينتهي بحرف)
-    m = re.search(r'[0-9]{4}[PCBU]', code)
-    if m:
-        c = m.group(0)
-        return c[-1] + c[:-1]
-
-    return code
 
 def clean_title(text):
     text = text.strip()
