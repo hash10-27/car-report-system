@@ -145,7 +145,31 @@ def fix_dtc(code):
         return c[-1] + c[:-1]
 
     return code
+def clean_title(text):
+    text = text.strip()
 
+    # 🔥 فصل العربي عن الإنجليزي
+    text = re.sub(r'([A-Za-z])([؀-ۿ])', r'\1 \2', text)
+    text = re.sub(r'([؀-ۿ])([A-Za-z])', r'\1 \2', text)
+
+    # 🔥 فصل الكلمات الكبيرة الملتصقة
+    text = re.sub(r'([A-Z]{2,})([A-Z]{2,})', r'\1 \2', text)
+
+    # 🔥 إزالة التكرار الغبي مثل EOBDOBD
+    words = text.split()
+    cleaned = []
+    for w in words:
+        if w not in cleaned:
+            cleaned.append(w)
+
+    text = " ".join(cleaned)
+
+    # 🔥 ترتيب OBD إذا انعكس
+    if "OBD" in text[::-1]:
+        text = text[::-1]
+
+    return text.strip()
+    
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
     current_title = ""
@@ -180,7 +204,7 @@ def fill_system_tables(doc, faults_raw):
                     current_title += " " + line
                     continue
 
-            current_title = line.strip()
+            current_title = clean_title(line)
 
             row = table.add_row().cells
             row[0].text = f"🔹 {current_title}"
