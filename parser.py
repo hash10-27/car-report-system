@@ -75,11 +75,29 @@ def fix_mileage(m):
     return m
 
 def fix_dtc(code):
-    code = code.replace(".", "")
-    code = code[::-1]
-    match = re.search(r'([PBCU][0-9A-Z]{4})', code)
-    return match.group(1) if match else code
+    if not code:
+        return ""
 
+    code = code.strip().replace(' ', '').replace('.', '')
+
+    # ✅ صحيح أصلاً
+    m = re.match(r'^([A-Z])(\d{4})$', code)
+    if m:
+        return code
+
+    # 🔄 مقلوب: 0031P
+    m = re.match(r'^(\d{4})([A-Z])$', code)
+    if m:
+        return m.group(2) + m.group(1)
+
+    # 🔄 حالات OCR غريبة
+    m = re.match(r'^(\d)([A-Z])(\d{3})$', code)
+    if m:
+        digit, letter, tail = m.groups()
+        return letter + digit + tail
+
+    return code
+    
 def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)
