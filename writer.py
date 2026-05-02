@@ -188,7 +188,7 @@ def fill_system_tables(doc, faults_raw):
             title_to_use = current_title or 'غير محدد'
 
             row[0].text = title_to_use if part == parts[0] else ""
-            row[1].text = m.group(0).replace('.', '')
+            row[1].text = fix_dtc(m.group(0))
 
             desc = part[m.end():].strip()
 
