@@ -175,6 +175,7 @@ def fill_system_tables(doc, faults_raw):
                     len(line) < 50
                     and not line.startswith("نظام")
                     and not re.match(r'DTC\s*\d+', line)
+                    and not re.search(r'\([A-Z/ ]+\)', line)  # 🔥 هذا هو الحل
                 ):
                     current_title += " " + line
                     continue
