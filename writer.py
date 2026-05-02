@@ -147,6 +147,7 @@ def fix_dtc(code):
         return c[-1] + c[:-1]
 
     return code
+    
 def clean_title(text):
     text = text.strip()
 
