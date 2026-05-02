@@ -127,6 +127,24 @@ def build_dtc_text(dtc_list):
         lines.append(line)
     return "\n".join(lines)
 
+def fix_dtc(code):
+    if not code:
+        return ""
+
+    code = code.strip().replace(".", "")
+
+    m = re.search(r'[0-9]{4}[A-Z]', code)
+    if m:
+        c = m.group(0)
+        return c[-1] + c[:-1]
+
+    rev = code[::-1]
+    m = re.search(r'[0-9]{4}[A-Z]', rev)
+    if m:
+        c = m.group(0)
+        return c[-1] + c[:-1]
+
+    return code
 
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
