@@ -122,121 +122,75 @@ def build_dtc_text(dtc_list):
         line = f"{system} | {d.get('code','')} | {d.get('desc','')}"
         lines.append(line)
     return "\n".join(lines)
+
+
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
+    current_title = ""
+    current_group = False
 
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
-    def has_dtc(line):
-        return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or \
-               re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+    for line in faults_raw:
+        print(f"\n🔹 LINE: {line}") 
 
-    def is_noise(line):
-        return (
-            not line or
-            len(line) <= 2 or
-            re.match(r'^[A-Z]{1,4}$', line) or  # LH HL MC
-            any(x in line for x in [
-                "غير طبيعي", "DTC", "Present",
-                "الحالي", "التاريخ",
-                "المختلطة", "النظام التالي"
-            ])
-        )
-
-    current_title = ""
-    current_desc = ""
-    current_code = None
-
-    i = 0
-    while i < len(faults_raw):
-        line = faults_raw[i].strip()
-        print(f"🔹 LINE: {line}")
-
+        line = line.strip()
         if not line:
-            i += 1
             continue
 
-        # =========================
-        # 🔥 عنوان
-        # =========================
-        if not has_dtc(line) and not is_noise(line):
+        def has_dtc(line):
+            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-            # دمج العنوان لو سطر مكمل
-            if current_title and len(line) < 50 and not line.startswith("نظام"):
-                current_title += " " + line
-            else:
-                current_title = line
+        # 🔥 الحالة 1: عنوان
+        if not has_dtc(line):
 
-                row = table.add_row().cells
-                row[0].text = f"🔹 {current_title}"
-                row[1].text = ""
-                row[2].text = ""
-
-                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-                center_cell(row[0])
-
-            i += 1
-            continue
-
-        # =========================
-        # 🔥 بداية DTC
-        # =========================
-        if has_dtc(line):
-
-            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
-            if not m:
-                i += 1
+            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
                 continue
 
-            current_code = m.group(0).replace(".", "")
-            current_desc = line[m.end():].strip()
-
-            # تنظيف أولي
-            current_desc = re.sub(r'(الحالي|التاريخ|Present)', '', current_desc)
-
-            # =========================
-            # 🔥 اقرأ الأسطر التالية كتكملة
-            # =========================
-            j = i + 1
-            while j < len(faults_raw):
-                next_line = faults_raw[j].strip()
-
-                if has_dtc(next_line):
-                    break
-
-                if is_noise(next_line):
-                    j += 1
+            if current_title:
+                if len(line) < 50 or not line.startswith("نظام"):
+                    current_title += " " + line
                     continue
 
-                current_desc += " " + next_line
-                j += 1
+            current_title = line.strip()
 
-            # تنظيف نهائي
-            current_desc = re.sub(r'\b(LH|HL|MC)\b', '', current_desc)
-            current_desc = re.sub(r'\s+', ' ', current_desc).strip()
+            row = table.add_row().cells
+            row[0].text = f"🔹 {current_title}"
+            row[1].text = ""
+            row[2].text = ""
 
-            if len(current_desc) < 3:
-                i = j
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            center_cell(row[0])
+            continue
+
+        # 🔥 الحالة 2: DTC
+        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
+
+        for part in parts:
+            part = part.strip()
+            if not part:
                 continue
 
-            # =========================
-            # 🔥 إضافة للجدول
-            # =========================
+            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+            if not m:
+                continue
+
             row = table.add_row().cells
-            row[0].text = current_title or "غير محدد"
-            row[1].text = current_code
-            row[2].text = current_desc
+            title_to_use = current_title or 'غير محدد'
+
+            row[0].text = title_to_use
+            row[1].text = m.group(0).replace('.', '')
+
+            desc = part[m.end():].strip()
+            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
+
+            row[2].text = desc
 
             style_cell(row[0], bold=True)
             center_cell(row[0])
             center_cell(row[1])
             center_cell(row[2])
-
-            i = j
-            continue
-
-        i += 1
 # 🔹 تعبئة القالب
 
 def fill_template(template_path, output_path, data):
