@@ -139,60 +139,58 @@ def fill_system_tables(doc, faults_raw):
         if not line:
             continue
 
-        
         def has_dtc(line):
-            return re.search(r'\d+.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+.[0-9A-Z]{4}[PCBU]', line)
+            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
 
-            # 🔥 الحالة 1: عنوان  
-            if not has_dtc(line):  
+        # 🔥 الحالة 1: عنوان
+        if not has_dtc(line):
 
-                if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):  
-                    continue  
+            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
+                continue
 
-                if current_title:  
-                    if len(line) < 50 or not line.startswith("نظام"):  
-                        current_title += " " + line  
-                        continue  
+            if current_title:
+                if len(line) < 50 or not line.startswith("نظام"):
+                    current_title += " " + line
+                    continue
 
-                current_title = line.strip()  
+            current_title = line.strip()
 
-                row = table.add_row().cells  
-                row[0].text = f"🔹 {current_title}"  
-                row[1].text = ""  
-                row[2].text = ""  
+            row = table.add_row().cells
+            row[0].text = f"🔹 {current_title}"
+            row[1].text = ""
+            row[2].text = ""
 
-                style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))  
-                center_cell(row[0])  
-                continue  
+            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            center_cell(row[0])
+            continue
 
-            # 🔥 الحالة 2: DTC  
-            parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)  
+        # 🔥 الحالة 2: DTC
+        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
 
-            for part in parts:  
-                part = part.strip()  
-                if not part:  
-                    continue  
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
 
-                m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)  
-                if not m:  
-                    continue  
+            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+            if not m:
+                continue
 
-                row = table.add_row().cells  
-                title_to_use = current_title or 'غير محدد'  
+            row = table.add_row().cells
+            title_to_use = current_title or 'غير محدد'
 
-                row[0].text = title_to_use  
-                row[1].text = m.group(0).replace('.', '')  
+            row[0].text = title_to_use
+            row[1].text = m.group(0).replace('.', '')
 
-                desc = part[m.end():].strip()  
-                desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)  
+            desc = part[m.end():].strip()
+            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
 
-                row[2].text = desc  
+            row[2].text = desc
 
-                style_cell(row[0], bold=True)  
-                center_cell(row[0])  
-                center_cell(row[1])  
-                center_cell(row[2])
-
+            style_cell(row[0], bold=True)
+            center_cell(row[0])
+            center_cell(row[1])
+            center_cell(row[2])
 # 🔹 تعبئة القالب
 
 def fill_template(template_path, output_path, data):
