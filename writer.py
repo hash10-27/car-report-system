@@ -153,7 +153,7 @@ def fill_system_tables(doc, faults_raw):
                 continue
 
             if current_title:
-                if len(line) < 50 and not line.startswith("نظام") and not line.startswith("DTC"):
+                if len(line) < 50 and not and not re.match(r'DTC\s*\d+', line):
                     current_title += " " + line
                     continue
 
