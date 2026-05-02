@@ -75,24 +75,11 @@ def fix_mileage(m):
     return m
 
 def fix_dtc(code):
-    if not code:
-        return ""
+    code = code.replace(".", "")
+    code = code[::-1]
+    match = re.search(r'([PBCU][0-9A-Z]{4})', code)
+    return match.group(1) if match else code
 
-    code = code.strip().replace(".", "")
-
-    m = re.search(r'[0-9]{4}[A-Z]', code)
-    if m:
-        c = m.group(0)
-        return c[-1] + c[:-1]
-
-    rev = code[::-1]
-    m = re.search(r'[0-9]{4}[A-Z]', rev)
-    if m:
-        c = m.group(0)
-        return c[-1] + c[:-1]
-
-    return code
-    
 def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)

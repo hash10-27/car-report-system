@@ -135,19 +135,18 @@ def fix_dtc(code):
 
     code = code.strip().replace(".", "")
 
-    m = re.search(r'[0-9]{4}[A-Z]', code)
-    if m:
-        c = m.group(0)
-        return c[-1] + c[:-1]
+    # ✅ إذا الكود صحيح (يبدأ بحرف)
+    if re.match(r'^[PCBU][0-9]{4}$', code):
+        return code
 
-    rev = code[::-1]
-    m = re.search(r'[0-9]{4}[A-Z]', rev)
+    # 🔄 إذا كان مقلوب (ينتهي بحرف)
+    m = re.search(r'[0-9]{4}[PCBU]', code)
     if m:
         c = m.group(0)
         return c[-1] + c[:-1]
 
     return code
-    
+
 def clean_title(text):
     text = text.strip()
 
