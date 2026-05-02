@@ -32,21 +32,23 @@ def build_dtc_text(dtc_list):
     return "\n".join(lines)
 
 def center_cell(cell):
-    # توسيط أفقي
+    # 🔥 الفقرة (المهم)
     for paragraph in cell.paragraphs:
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # توسيط عمودي  
-    tc = cell._element  
-    tcPr = tc.get_or_add_tcPr()  
-    vAlign = OxmlElement('w:vAlign')  
-    vAlign.set(qn('w:val'), 'center')  
+        pPr = paragraph._element.get_or_add_pPr()
+
+        bidi = OxmlElement('w:bidi')
+        bidi.set(qn('w:val'), '1')
+        pPr.append(bidi)
+
+    # 🔽 الخلية (اختياري لكن جيد)
+    tc = cell._element
+    tcPr = tc.get_or_add_tcPr()
+
+    vAlign = OxmlElement('w:vAlign')
+    vAlign.set(qn('w:val'), 'center')
     tcPr.append(vAlign)
-
-    bidi = OxmlElement('w:bidi')
-    bidi.set(qn('w:val'), '1')
-    tcPr.append(bidi)
-
 # 🔹 تحويل قائمة DTC إلى نص مرتب
 
 def fill_dtc_table(doc, dtc_list):
@@ -169,7 +171,7 @@ def clean_title(text):
         text = text[::-1]
 
     return text.strip()
-    
+
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
     current_title = ""
