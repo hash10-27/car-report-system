@@ -183,8 +183,13 @@ def fill_system_tables(doc, faults_raw):
             row[1].text = m.group(0).replace('.', '')
 
             desc = part[m.end():].strip()
-            if not desc:
-                desc = line.strip()
+
+            # 🔥 إضافة هذا فقط
+            next_index = faults_raw.index(line) + 1
+            if next_index < len(faults_raw):
+                next_line = faults_raw[next_index].strip()
+                if next_line and not has_dtc(next_line):
+                    desc += " " + next_line
 
             desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
 
