@@ -132,7 +132,7 @@ def fill_system_tables(doc, faults_raw):
         faults_raw = faults_raw.splitlines()
 
     for line in faults_raw:
-    print(f"\n🔹 LINE: {line}") 
+        print(f"\n🔹 LINE: {line}") 
 
     line = line.strip()
     if not line:
