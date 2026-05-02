@@ -100,11 +100,11 @@ def fill_system_tables(doc, faults_raw):
         faults_raw = faults_raw.splitlines()
 
     def clean_line(s):
-        return re.sub(r'^s*d+.?s*', '', s).strip()
+        return re.sub(r'^\s*\d+\.?\s*', '', s).strip()
 
     def has_dtc(line):
         return bool(
-            re.search(r'd+.[0-9A-Z]{4}[PCBU]', line) or
+            re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line) or
             re.search(r'd+.d+[A-Z0-9]{4}[PCBU]', line)
         )
 
@@ -171,7 +171,7 @@ def fill_system_tables(doc, faults_raw):
 
                 desc = part[m.end():].strip()
                 desc = re.sub(r'^(الحالي|التاريخ|Present)s*', '', desc)
-                desc = re.sub(r's+', ' ', desc).strip()
+                desc = re.sub(r'\s+', ' ', desc).strip()
 
                 if len(desc) < 2:
                     continue
