@@ -43,6 +43,10 @@ def center_cell(cell):
     vAlign.set(qn('w:val'), 'center')  
     tcPr.append(vAlign)
 
+    bidi = OxmlElement('w:bidi')
+    bidi.set(qn('w:val'), '1')
+    tcPr.append(bidi)
+
 # 🔹 تحويل قائمة DTC إلى نص مرتب
 
 def fill_dtc_table(doc, dtc_list):
@@ -149,7 +153,7 @@ def fill_system_tables(doc, faults_raw):
                 continue
 
             if current_title:
-                if len(line) < 50 and not line.startswith("نظام"):
+                if len(line) < 50 and not line.startswith("نظام") and not line.startswith("DTC"):
                     current_title += " " + line
                     continue
 
