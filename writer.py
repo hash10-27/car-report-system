@@ -130,51 +130,60 @@ def fill_system_tables(doc, faults_raw):
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
+    # 🔹 تنظيف السطر
     def clean_line(s):
-        return re.sub(r'^\s*\d+\.?\s*', '', s).strip()
+        s = re.sub(r'^\s*\d+\.?\s*', '', s)
+        return s.strip()
 
+    # 🔹 هل السطر يحتوي DTC
+    def has_dtc(s):
+        return bool(re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', s))
+
+    # 🔹 سطور ضجيج
     def is_noise(s):
-        s = clean_line(s)
         return (
             not s or
             s in ["LH", "HL", "المختلطة"] or
-            s == "DTC" or
-            s.startswith("DTC ") or
-            s.startswith("Present") or
-            s.startswith("الحالي") or
-            s.startswith("التاريخ") or
             "غير طبيعي" in s or
             "رمز خطأ النظام" in s or
-            s.startswith("النظام التالي")
+            s.startswith("DTC") or
+            s.startswith("Present") or
+            s.startswith("الحالي") or
+            s.startswith("التاريخ")
         )
 
+    # 🔹 كشف العنوان (بدون قائمة ثابتة)
     def is_title_line(s):
-        s = clean_line(s)
         if is_noise(s):
             return False
-        if re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', s):
+        if has_dtc(s):
             return False
-        if re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', s):
-            return False
-        if len(s) < 3:
+        if len(s) < 4:
             return False
         return True
 
+    # 🔹 استخراج اسم النظام
+    def extract_system_name(title):
+        m = re.search(r'([A-Z]{2,5})$', title)
+        return m.group(1) if m else title
+
+    # 🔹 استخراج كود + وصف
     def extract_code(line):
-        line = clean_line(line)
         line = re.sub(r'^(الحالي|التاريخ|Present)\s*', '', line)
-        m = re.search(r'(\d+\.[0-9A-Z]{4}[PCBU]|\d+\.\d+[A-Z0-9]{4}[PCBU])', line)
+        m = re.search(r'(\d+\.[0-9A-Z]{4}[PCBU])', line)
         if not m:
             return None, None
+
         code = m.group(1).replace('.', '')
         desc = line[m.end():].strip()
-        desc = re.sub(r'^\s*[:-–]?\s*', '', desc)
-        desc = re.sub(r'\s+', ' ', desc).strip()
+        desc = re.sub(r'\s+', ' ', desc)
         return code, desc
 
-    current_title = ""
-    i = 0
+    # 🔥 الهيكل النهائي
+    systems_map = {}
+    current_system = None
 
+    i = 0
     while i < len(faults_raw):
         line = clean_line(faults_raw[i])
 
@@ -182,40 +191,47 @@ def fill_system_tables(doc, faults_raw):
             i += 1
             continue
 
-        if line.startswith("DTC") and len(line.split()) <= 2:
+        # 🔷 عنوان نظام جديد
+        if is_title_line(line):
+            system_name = extract_system_name(line)
+
+            current_system = system_name
+            systems_map.setdefault(current_system, {
+                "title": line,
+                "faults": []
+            })
+
             i += 1
             continue
 
+        # 🔥 استخراج DTC
         code, desc = extract_code(line)
 
         if code:
-            desc_parts = []
-            if desc:
-                desc_parts.append(desc)
+            if not current_system:
+                current_system = "UNKNOWN"
+                systems_map.setdefault(current_system, {
+                    "title": "غير محدد",
+                    "faults": []
+                })
 
+            desc_parts = [desc] if desc else []
+
+            # 🔥 دمج الأسطر التالية للوصف
             j = i + 1
             while j < len(faults_raw):
                 nxt = clean_line(faults_raw[j])
 
-                if not nxt:
-                    j += 1
-                    continue
-
-                if is_noise(nxt):
+                if not nxt or is_noise(nxt):
                     j += 1
                     continue
 
                 if is_title_line(nxt):
                     break
 
-                next_code, next_desc = extract_code(nxt)
+                next_code, _ = extract_code(nxt)
                 if next_code:
                     break
-
-                if len(nxt) < 80:
-                    desc_parts.append(nxt)
-                    j += 1
-                    continue
 
                 desc_parts.append(nxt)
                 j += 1
@@ -223,31 +239,41 @@ def fill_system_tables(doc, faults_raw):
             full_desc = " ".join(desc_parts)
             full_desc = re.sub(r'\s+', ' ', full_desc).strip()
 
+            systems_map[current_system]["faults"].append({
+                "code": code,
+                "desc": full_desc
+            })
+
+            i = j
+            continue
+
+        i += 1
+
+    # =========================================
+    # 🔥 الطباعة النهائية (شكل وكالة)
+    # =========================================
+    for system, data_sys in systems_map.items():
+
+        # 🔷 عنوان النظام
+        row = table.add_row().cells
+        row[0].text = f"🔹 {data_sys['title']}"
+        row[1].text = ""
+        row[2].text = ""
+
+        style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+        center_cell(row[0])
+
+        # 🔻 الأعطال
+        for f in data_sys["faults"]:
             row = table.add_row().cells
-            row[0].text = current_title or "غير محدد"
-            row[1].text = code
-            row[2].text = full_desc
+            row[0].text = system
+            row[1].text = f["code"]
+            row[2].text = f["desc"]
 
             style_cell(row[0], bold=True)
             center_cell(row[0])
             center_cell(row[1])
             center_cell(row[2])
-
-            i = j
-            continue
-
-        if is_title_line(line):
-            current_title = line
-            row = table.add_row().cells
-            row[0].text = f"🔹 {current_title}"
-            row[1].text = ""
-            row[2].text = ""
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
-            center_cell(row[0])
-            i += 1
-            continue
-
-        i += 1
 
 # 🔹 تعبئة القالب
 
