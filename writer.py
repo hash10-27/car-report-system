@@ -126,8 +126,11 @@ def build_dtc_text(dtc_list):
 
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
-    current_title = ""
     current_group = False
+    system_titles = []
+    current_title = ""
+    current_dtc_count = 0
+    pending_title = False
 
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
