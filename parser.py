@@ -73,52 +73,31 @@ def fix_mileage(m):
     if m.isdigit():
         return m
     return m
+
 def fix_dtc(code):
     if not code:
         return ""
 
-    code = code.strip().upper()
+    code = code.strip().replace(' ', '').replace('.', '')
 
-    # 🔥 إزالة أي رموز غريبة
-    code = re.sub(r'[^A-Z0-9]', '', code)
-
-    # =========================================
-    # 🔥 تصحيح أخطاء OCR (حروف ↔ أرقام)
-    # =========================================
-    ocr_map = {
-        'O': '0',
-        'I': '1',
-        'L': '1',
-        'Z': '2',
-        'S': '5',
-        'B': '8'  # ⚠️ لاحظ: B قد تكون صحيحة كحرف نظام
-    }
-
-    # نحول فقط الأرقام (وليس أول حرف)
-    fixed = []
-    for i, c in enumerate(code):
-        if i == 0:
-            fixed.append(c)  # أول حرف نظام
-        else:
-            fixed.append(ocr_map.get(c, c))
-
-    code = "".join(fixed)
-
-    # =========================================
-    # 🔄 إذا الكود مقلوب (0031P)
-    # =========================================
-    if re.match(r'^\d{4}[PCBU]$', code):
-        code = code[-1] + code[:-1]
-
-    # =========================================
-    # 🔧 استخراج كود صحيح فقط
-    # =========================================
-    m = re.search(r'([PCBU][0-9]{4})', code)
+    # ✅ صحيح أصلاً
+    m = re.match(r'^([A-Z])(\d{4})$', code)
     if m:
-        return m.group(1)
+        return code
+
+    # 🔄 مقلوب: 0031P
+    m = re.match(r'^(\d{4})([A-Z])$', code)
+    if m:
+        return m.group(2) + m.group(1)
+
+    # 🔄 حالات OCR غريبة
+    m = re.match(r'^(\d)([A-Z])(\d{3})$', code)
+    if m:
+        digit, letter, tail = m.groups()
+        return letter + digit + tail
 
     return code
-
+    
 def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)
