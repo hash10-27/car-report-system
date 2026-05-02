@@ -123,7 +123,6 @@ def build_dtc_text(dtc_list):
         lines.append(line)
     return "\n".join(lines)
 
-
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
     current_title = ""
@@ -131,28 +130,44 @@ def fill_system_tables(doc, faults_raw):
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
 
-    for line in faults_raw:
-        print(f"\n🔹 LINE: {line}") 
+    # 🔥 خارج اللوب
+    def has_dtc(line):
+        return (
+            re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line)
+            or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
+        )
+
+    for i, line in enumerate(faults_raw):
+        print(f"\n🔹 LINE: {line}")
 
         line = line.strip()
         if not line:
             continue
 
-        def has_dtc(line):
-            return re.search(r'\d+\.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+\.[0-9A-Z]{4}[PCBU]', line)
-
-        # 🔥 الحالة 1: عنوان
+        # =========================
+        # 🔥 عنوان
+        # =========================
         if not has_dtc(line):
 
-            if any(x in line for x in ["غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"]):
+            # ❌ فلترة قوية
+            if any(x in line for x in [
+                "غير طبيعي", "DTC", "Present", "الحالي", "التاريخ"
+            ]):
                 continue
 
+            if len(line) <= 3:
+                continue
+
+            if re.match(r'^[A-Z]{1,4}$', line):  # LH HL MC
+                continue
+
+            # 🔥 دمج العنوان
             if current_title:
-                if len(line) < 50 or not line.startswith("نظام"):
+                if len(line) < 50 and not line.startswith("نظام"):
                     current_title += " " + line
                     continue
 
-            current_title = line.strip()
+            current_title = line
 
             row = table.add_row().cells
             row[0].text = f"🔹 {current_title}"
@@ -163,27 +178,54 @@ def fill_system_tables(doc, faults_raw):
             center_cell(row[0])
             continue
 
-        # 🔥 الحالة 2: DTC
-        parts = re.split(r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', line)
+        # =========================
+        # 🔥 DTC
+        # =========================
+        parts = re.split(
+            r'(?=\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])',
+            line
+        )
 
         for part in parts:
             part = part.strip()
             if not part:
                 continue
 
-            m = re.search(r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])', part)
+            m = re.search(
+                r'(\d+\.\d+[A-Z0-9]{4}[PCBU]|\d+\.[0-9A-Z]{4}[PCBU])',
+                part
+            )
             if not m:
                 continue
 
-            row = table.add_row().cells
-            title_to_use = current_title or 'غير محدد'
-
-            row[0].text = title_to_use
-            row[1].text = m.group(0).replace('.', '')
+            code = m.group(0).replace('.', '')
 
             desc = part[m.end():].strip()
-            desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
 
+            # 🔥 تنظيف الوصف
+            desc = re.sub(r'(الحالي|التاريخ|Present)', '', desc)
+            desc = re.sub(r'\b(LH|HL|MC)\b', '', desc)
+            desc = re.sub(r'\s+', ' ', desc).strip()
+
+            # 🔥 دمج السطر التالي
+            if i + 1 < len(faults_raw):
+                next_line = faults_raw[i + 1].strip()
+
+                if not has_dtc(next_line):
+                    if not any(x in next_line for x in [
+                        "DTC", "غير طبيعي", "الحالي", "التاريخ"
+                    ]):
+                        if len(next_line) > 3 and not re.match(r'^[A-Z]{1,4}$', next_line):
+                            desc += " " + next_line
+
+            if len(desc) < 3:
+                continue
+
+            row = table.add_row().cells
+            title_to_use = current_title or "غير محدد"
+
+            row[0].text = title_to_use
+            row[1].text = code
             row[2].text = desc
 
             style_cell(row[0], bold=True)
