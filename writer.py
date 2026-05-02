@@ -141,7 +141,7 @@ def fill_system_tables(doc, faults_raw):
 
         
         def has_dtc(line):
-        return re.search(r'\d+.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+.[0-9A-Z]{4}[PCBU]', line)
+            return re.search(r'\d+.\d+[A-Z0-9]{4}[PCBU]', line) or re.search(r'\d+.[0-9A-Z]{4}[PCBU]', line)
 
         # 🔥 الحالة 1: عنوان  
             if not has_dtc(line):  
