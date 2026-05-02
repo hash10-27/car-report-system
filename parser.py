@@ -73,28 +73,37 @@ def fix_mileage(m):
     if m.isdigit():
         return m
     return m
-
 def fix_dtc(code):
     if not code:
         return ""
 
-    code = code.strip().replace(' ', '').replace('.', '')
+    code = code.upper().strip()
+    code = re.sub(r'[^A-Z0-9]', '', code)
 
-    # ✅ صحيح أصلاً
-    m = re.match(r'^([A-Z])(\d{4})$', code)
-    if m:
-        return code
+    # 🔧 تصحيح OCR
+    ocr_map = {
+        'O': '0',
+        'I': '1',
+        'L': '1',
+        'Z': '2',
+        'S': '5',
+    }
 
-    # 🔄 مقلوب: 0031P
-    m = re.match(r'^(\d{4})([A-Z])$', code)
-    if m:
-        return m.group(2) + m.group(1)
+    # لا نلمس أول حرف (نظام P/C/B/U)
+    fixed = [code[0]] if code else []
+    for c in code[1:]:
+        fixed.append(ocr_map.get(c, c))
 
-    # 🔄 حالات OCR غريبة
-    m = re.match(r'^(\d)([A-Z])(\d{3})$', code)
+    code = "".join(fixed)
+
+    # 🔄 لو مقلوب: 0031P
+    if re.match(r'^\d{4}[PCBU]$', code):
+        code = code[-1] + code[:-1]
+
+    # 🎯 استخرج كود صحيح فقط
+    m = re.search(r'([PCBU]\d{4})', code)
     if m:
-        digit, letter, tail = m.groups()
-        return letter + digit + tail
+        return m.group(1)
 
     return code
     
