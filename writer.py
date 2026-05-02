@@ -126,11 +126,8 @@ def build_dtc_text(dtc_list):
 
 def fill_system_tables(doc, faults_raw):
     table = doc.tables[1]
-    current_group = False
-    system_titles = []
     current_title = ""
-    current_dtc_count = 0
-    pending_title = False
+    current_group = False
 
     if isinstance(faults_raw, str):
         faults_raw = faults_raw.splitlines()
@@ -181,9 +178,8 @@ def fill_system_tables(doc, faults_raw):
                 continue  
 
             row = table.add_row().cells  
-            title_to_use = current_title or 'غير محدد'  
-
-            row[0].text = title_to_use  
+              
+            row[0].text = ""  
             row[1].text = m.group(0).replace('.', '')  
 
             desc = part[m.end():].strip()  
