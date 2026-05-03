@@ -9,10 +9,9 @@ from parser import parse
 from writer import fill_template
 from datetime import timedelta
 
-app.permanent_session_lifetime = timedelta(days=1)
-
 # 🔐 إعداد التطبيق
 app = Flask(__name__, static_folder='static')
+app.permanent_session_lifetime = timedelta(days=1)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this")
 
 # 🔐 بيانات الدخول من Render
