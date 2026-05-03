@@ -96,6 +96,7 @@ def fill_ok_systems_table(doc, systems_ok):
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 def style_cell(cell, bold=False, color=None):
+    font_name = "Calibri"
     for p in cell.paragraphs:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in p.runs:
