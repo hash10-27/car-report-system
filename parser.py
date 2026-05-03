@@ -241,10 +241,15 @@ def parse(text):
             if fixed_parts:
                 data["car_info"]["engine"] = " ".join(sorted(fixed_parts, key=lambda x: (not 'L' in x, len(x))))
         elif "عداد" in clean:
+
             numbers = re.findall(r'\d+', line)
+
             if numbers:
+                # نأخذ أطول رقم (غالباً هو الصحيح)
                 value = max(numbers, key=len)
+
                 data["car_info"]["mileage"] = value
+                
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
         elif "اسمالفني" in clean:

@@ -94,19 +94,28 @@ def fill_ok_systems_table(doc, systems_ok):
         for cell in row:  
             for p in cell.paragraphs:  
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
+                
 def style_cell(cell, bold=False, color=None):
-    font_name = "Calibri"
+    font_name = "Arial"  # 👈 استخدم Arial أو Segoe UI
+
     for p in cell.paragraphs:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
         for run in p.runs:
             run.bold = bold
             run.font.size = Pt(11)
-            run.font.name = font_name   # 🔥 خط رسمي
 
-            # مهم للعربي
+            # 🔥 هذا المهم فعلاً
             r = run._element
-            r.rPr.rFonts.set(qn('w:eastAsia'), font_name)
+            rPr = r.get_or_add_rPr()
+            rFonts = OxmlElement('w:rFonts')
+
+            rFonts.set(qn('w:ascii'), font_name)
+            rFonts.set(qn('w:hAnsi'), font_name)
+            rFonts.set(qn('w:eastAsia'), font_name)
+            rFonts.set(qn('w:cs'), font_name)
+
+            rPr.append(rFonts)
 
             if color:
                 run.font.color.rgb = color
