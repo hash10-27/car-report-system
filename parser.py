@@ -94,7 +94,31 @@ def fix_year(y):
         pass
 
     return y
-    
+def fix_phone(p):
+    if not p:
+        return p
+
+    p = re.sub(r'\D', '', p)  # تنظيف أي شيء غير رقم
+
+    rev = p[::-1]
+
+    # 🔥 اختر الأنسب
+    # غالبًا الرقم الصحيح:
+    # - يبدأ بـ 7 أو 9 (في اليمن)
+    # - أو يبدأ بـ 0
+
+    def score(x):
+        s = 0
+        if x.startswith("0"):
+            s += 2
+        if x.startswith(("7", "9")):
+            s += 2
+        if len(x) >= 9:
+            s += 1
+        return s
+
+    return rev if score(rev) > score(p) else p
+
 def fix_dtc(code):
     if not code:
         return ""
@@ -135,7 +159,15 @@ def fix_dtc(code):
         return m.group(1)
 
     return code
-    
+
+def fix_labels(doc):
+    labels = ["SN :", "إصدار برنامج السيارة :", "إصدار تطبيق التشخيص :"]
+
+    for p in doc.paragraphs:
+        for l in labels:
+            if l in p.text:
+                p.text = p.text.replace(l, force_rtl_text(l))
+                
 def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)
@@ -279,7 +311,7 @@ def parse(text):
         elif "الهاتف" in clean:
             phone = re.search(r'\d{6,}', line)
             if phone:
-                data["customer_info"]["phone"] = phone.group()
+                data["customer_info"]["phone"] = fix_phone(phone.group())
         elif "إصدار برنامج السيارة" in clean:
             data["meta"]["car_version"] = extract_from_line(line, ["إصدار برنامج السيارة"])
         elif "إصدار تطبيق التشخيص" in clean:

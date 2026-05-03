@@ -94,7 +94,7 @@ def fill_ok_systems_table(doc, systems_ok):
         for cell in row:  
             for p in cell.paragraphs:  
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                
+
 def style_cell(cell, bold=False, color=None):
     font_name = "Arial"  # 👈 استخدم Arial أو Segoe UI
 
@@ -314,6 +314,12 @@ def fill_template(template_path, output_path, data):
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER  
                     for run in p.runs:  
                         run.bold = True  
+                if any(x in cell.text for x in [
+                    "SN",
+                    "إصدار برنامج السيارة",
+                    "إصدار تطبيق التشخيص"
+                ]):
+                    fix_label_cell(cell)
 
             # 🔥 توسيط عمودي  
             tc = cell._element  
