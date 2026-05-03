@@ -368,7 +368,9 @@ def parse(text):
                 continue
 
             item = {"code": code, "desc": desc.strip(), "title": current_title or ""}
-            data["dtc"].append(item)
+            # 🔥 منع التكرار
+            if not any(d["code"] == code for d in data["dtc"]):
+                data["dtc"].append(item)
 
             if current_title:
                 data["systems"].setdefault(current_title, []).append(item)

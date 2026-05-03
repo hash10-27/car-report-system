@@ -7,6 +7,9 @@ from werkzeug.utils import secure_filename
 from extractor import extract_text
 from parser import parse
 from writer import fill_template
+from datetime import timedelta
+
+app.permanent_session_lifetime = timedelta(days=1)
 
 # 🔐 إعداد التطبيق
 app = Flask(__name__, static_folder='static')
@@ -39,6 +42,7 @@ def login():
         p = request.form.get("password")
 
         if check_auth(u, p):
+            session.permanent = True
             session["logged_in"] = True
             return redirect("/")
         else:
