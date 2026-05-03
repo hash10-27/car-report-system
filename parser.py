@@ -225,6 +225,7 @@ def parse(text):
     capture = False
     system_titles = []
     current_title = ""
+    seen_dtc = set()
     for i, line in enumerate(lines):
         line = normalize_line(line)
         if not line:
@@ -368,9 +369,14 @@ def parse(text):
                 continue
 
             item = {"code": code, "desc": desc.strip(), "title": current_title or ""}
+
             # 🔥 منع التكرار
-            if not any(d["code"] == code for d in data["dtc"]):
-                data["dtc"].append(item)
+            if code in seen_dtc:
+                continue
+
+            seen_dtc.add(code)
+
+            data["dtc"].append(item)
 
             if current_title:
                 data["systems"].setdefault(current_title, []).append(item)
