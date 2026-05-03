@@ -14,7 +14,7 @@ def fix_full_text(text):
    
     return "\n".join(fixed_lines)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "outputs"

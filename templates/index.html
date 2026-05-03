@@ -1,48 +1,125 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>تحويل التقارير</title>
+<title>نظام تقارير السيارات</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 body {
-    font-family: Arial;
-    background: #1e1e2f;
-    color: white;
-    text-align: center;
-    padding: 40px;
+    font-family: 'Cairo', sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
-.box {
-    background: #2e2e3f;
+/* 🔷 الكرت */
+.card {
+    width: 420px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
     padding: 30px;
-    border-radius: 15px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    text-align: center;
 }
 
-button {
-    padding: 15px 30px;
-    font-size: 18px;
-    margin-top: 15px;
+/* 🔷 الشعار */
+.logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-bottom: 15px;
+}
+
+/* 🔷 العنوان */
+h2 {
+    margin-bottom: 20px;
+}
+
+/* 🔷 رفع ملف */
+.file-box {
+    border: 2px dashed #3b82f6;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
     cursor: pointer;
+    transition: 0.3s;
+}
+
+.file-box:hover {
+    background: rgba(59,130,246,0.1);
+}
+
+input[type="file"] {
+    display: none;
+}
+
+/* 🔷 الأزرار */
+button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.btn-main {
+    background: #22c55e;
+}
+.btn-main:hover {
+    background: #16a34a;
+}
+
+.btn-download {
+    background: #3b82f6;
+}
+.btn-download:hover {
+    background: #2563eb;
+}
+
+.btn-print {
+    background: #f59e0b;
+}
+.btn-print:hover {
+    background: #d97706;
+}
+
+/* 🔷 حالة */
+.status {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #ccc;
 }
 </style>
 
 <script>
 function printFile() {
-    const link = document.querySelector('a[href^="/download"]');
+    const link = document.querySelector('a[data-download]');
     if (!link) return;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = link.href;
+    const win = window.open(link.href, '_blank');
 
-    document.body.appendChild(iframe);
+    setTimeout(() => {
+        win.print();
+    }, 1000);
+}
 
-    iframe.onload = function() {
-        iframe.contentWindow.print();
-    };
+// 🔥 عرض اسم الملف
+function showFileName(input) {
+    const label = document.getElementById("file-name");
+    if (input.files.length > 0) {
+        label.innerText = input.files[0].name;
+    }
 }
 </script>
 
@@ -50,25 +127,38 @@ function printFile() {
 
 <body>
 
-<div class="box">
-    <h2>📊 تحويل تقرير السيارة</h2>
+<div class="card">
+
+    <!-- 🖼️ شعار -->
+    <img src="/static/logo.png" class="logo" alt="logo">
+
+    <h2>📊 نظام تقارير السيارات</h2>
 
     <form method="POST" enctype="multipart/form-data"
-          onsubmit="this.querySelector('button').disabled = true;">
-        
-        <input type="file" name="file" accept=".pdf" required><br><br>
+          onsubmit="this.querySelector('.btn-main').disabled = true; 
+                    document.getElementById('status').innerText='جاري المعالجة...'">
 
-        <button type="submit">⚙️ تحويل</button>
+        <!-- 🔷 رفع ملف -->
+        <label class="file-box">
+            📁 اختر ملف PDF
+            <input type="file" name="file" accept=".pdf" required onchange="showFileName(this)">
+        </label>
+
+        <div id="file-name" class="status">لم يتم اختيار ملف</div>
+
+        <button class="btn-main" type="submit">⚙️ تحويل التقرير</button>
     </form>
 
     {% if file_ready %}
-        <br>
-        <a href="/download/{{file_ready}}">
-            <button>⬇️ تحميل التقرير</button>
+        <a data-download href="/download/{{file_ready}}">
+            <button class="btn-download">⬇️ تحميل التقرير</button>
         </a>
 
-        <button onclick="printFile()">🖨️ طباعة</button>
+        <button class="btn-print" onclick="printFile()">🖨️ طباعة</button>
     {% endif %}
+
+    <div id="status" class="status"></div>
+
 </div>
 
 </body>
