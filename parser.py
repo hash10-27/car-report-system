@@ -160,14 +160,6 @@ def fix_dtc(code):
 
     return code
 
-def fix_labels(doc):
-    labels = ["SN :", "إصدار برنامج السيارة :", "إصدار تطبيق التشخيص :"]
-
-    for p in doc.paragraphs:
-        for l in labels:
-            if l in p.text:
-                p.text = p.text.replace(l, force_rtl_text(l))
-                
 def extract_faults_raw(text):
     import re
     text = re.sub(r'[‎‏‪-‮]', '', text)
