@@ -130,9 +130,9 @@ function showFileName(input) {
 <div class="card">
 
     <!-- 🖼️ شعار -->
-    <img src="/static/logo.png" class="logo" alt="logo">
+    <img src="{{ url_for('static', filename='logo.png') }}">
 
-    <h2>📊 نظام تقارير السيارات</h2>
+    <h2>📊 نظام تقرير مركز صنعاء </h2>
 
     <form method="POST" enctype="multipart/form-data"
           onsubmit="this.querySelector('.btn-main').disabled = true; 
