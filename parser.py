@@ -73,6 +73,28 @@ def fix_mileage(m):
     if m.isdigit():
         return m
     return m
+
+def fix_year(y):
+    if not y:
+        return y
+
+    y_rev = y[::-1]
+
+    try:
+        y_int = int(y)
+        y_rev_int = int(y_rev)
+
+        # 🎯 اختر السنة المنطقية (بين 1980 و 2035)
+        if 1980 <= y_int <= 2035:
+            return y
+        if 1980 <= y_rev_int <= 2035:
+            return y_rev
+
+    except:
+        pass
+
+    return y
+    
 def fix_dtc(code):
     if not code:
         return ""
@@ -215,7 +237,7 @@ def parse(text):
         if "السنة" in clean:
             year = re.search(r'\d{4}', line)
             if year:
-                data["car_info"]["year"] = year.group()
+                data["car_info"]["year"] = fix_year(year.group())
         elif "الصانع" in clean:
             make = re.search(r'[A-Z]+', line)
             if make:
@@ -248,8 +270,8 @@ def parse(text):
                 # نأخذ أطول رقم (غالباً هو الصحيح)
                 value = max(numbers, key=len)
 
-                data["car_info"]["mileage"] = value
-                
+                data["car_info"]["mileage"] = fix_mileage(value)
+
         elif "اسمالعميل" in clean:
             data["customer_info"]["customer"] = extract_arabic_name(line)
         elif "اسمالفني" in clean:
