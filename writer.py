@@ -101,6 +101,12 @@ def style_cell(cell, bold=False, color=None):
         for run in p.runs:
             run.bold = bold
             run.font.size = Pt(11)
+            run.font.name = font_name   # 🔥 خط رسمي
+
+            # مهم للعربي
+            r = run._element
+            r.rPr.rFonts.set(qn('w:eastAsia'), font_name)
+
             if color:
                 run.font.color.rgb = color
 
@@ -196,7 +202,7 @@ def fill_system_tables(doc, faults_raw):
             row[1].text = ""
             row[2].text = ""
 
-            style_cell(row[0], bold=True, color=RGBColor(0, 102, 204))
+            style_cell(row[0], bold=True, color=RGBColor(0, 70, 160))
             center_cell(row[0])
             continue
 
@@ -223,6 +229,10 @@ def fill_system_tables(doc, faults_raw):
 
             print("FIX:", code_fixed)         #
             row[1].text = fix_dtc(code_raw)
+            for p in row[1].paragraphs:
+                for run in p.runs:
+                    run.bold = True
+                    run.font.color.rgb = RGBColor(200, 0, 0)  # 🔴 
 
             desc = part[m.end():].strip()
 
@@ -236,6 +246,7 @@ def fill_system_tables(doc, faults_raw):
             desc = re.sub(r'^(الحالي|التاريخ)\s*', '', desc)
 
             row[2].text = desc
+            style_cell(row[2])
 
             style_cell(row[0], bold=True)
             center_cell(row[0])
