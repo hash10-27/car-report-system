@@ -97,14 +97,16 @@ def fix_dtc(code):
     code = "".join(fixed)
 
     # 🔄 لو مقلوب: 0031P
-    # 🔥 حالة مثل 6AA0P
-    if re.match(r'^\d[A-Z]{3}\d[PCBU]$', code):
-        digits = code[0] + code[-2]   # 6 + 0
-        letters = code[1:4]           # AA0 → نصححه تحت
-        letter = code[-1]             # P
-
-        fixed_digits = (digits[::-1]).zfill(4)
-        return letter + fixed_digits
+    if re.match(r'^\d{4}[PCBU]$', code):
+        digits = code[:4][::-1]   # 🔥 اعكس الأرقام
+        letter = code[-1]
+        return letter + digits
+    
+    # 🔥 حالة مثل: 6AA0P
+    if re.match(r'^\d[A-Z0-9]{3}[PCBU]$', code):
+        letter = code[-1]
+        body = code[:-1][::-1]   # 🔥 اعكس كل شيء قبل الحرف
+        return letter + body
     # 🎯 استخرج كود صحيح فقط
     m = re.search(r'([PCBU]\d{4})', code)
     if m:
