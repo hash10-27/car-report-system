@@ -1,30 +1,66 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, redirect, url_for, session
 import os
+from werkzeug.security import check_password_hash
+from functools import wraps
+from werkzeug.utils import secure_filename
 
 from extractor import extract_text
-#from cleaner import fix_arabic
 from parser import parse
 from writer import fill_template
-#from arabic_fixer import normalize_arabic
 
-def fix_full_text(text):
-    lines = text.split("\n")
-    fixed_lines = []
-
-   
-    return "\n".join(fixed_lines)
-
+# 🔐 إعداد التطبيق
 app = Flask(__name__, static_folder='static')
+app.secret_key = os.environ.get("SECRET_KEY", "change-this")
 
+# 🔐 بيانات الدخول من Render
+USERNAME = os.environ.get("APP_USERNAME")
+PASSWORD_HASH = os.environ.get("APP_PASSWORD_HASH")
+
+# 🔐 التحقق
+def check_auth(u, p):
+    return u == USERNAME and check_password_hash(PASSWORD_HASH, p)
+
+# 🔒 حماية الصفحات
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+# 🔐 تسجيل الدخول
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+
+    if request.method == "POST":
+        u = request.form.get("username")
+        p = request.form.get("password")
+
+        if check_auth(u, p):
+            session["logged_in"] = True
+            return redirect("/")
+        else:
+            error = "بيانات غير صحيحة"
+
+    return render_template("login.html", error=error)
+
+# 🚪 تسجيل الخروج
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+# 📁 إعداد الملفات
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "outputs"
+TEMPLATE_PATH = "template.docx"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-TEMPLATE_PATH = "template.docx"
-
-
+# 🔢 إنشاء اسم ملف
 def get_next_filename(base_name="report", ext=".docx"):
     i = 1
     while True:
@@ -34,46 +70,32 @@ def get_next_filename(base_name="report", ext=".docx"):
             return path
         i += 1
 
-@app.route("/download/<filename>")
-def download_file(filename):
-    path = os.path.join(OUTPUT_FOLDER, filename)
-    return send_file(path, as_attachment=True)
+# 📥 الصفحة الرئيسية (محمي)
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
+
     if request.method == "POST":
         file = request.files.get("file")
 
         if not file or file.filename == "":
             return "❌ لم يتم اختيار ملف"
 
-        from werkzeug.utils import secure_filename
-
         filename = secure_filename(file.filename)
 
-        # إذا الاسم غريب من التابلت
         if not filename.lower().endswith(".pdf"):
             filename = "upload.pdf"
 
         pdf_path = os.path.join(UPLOAD_FOLDER, filename)
-
-        # ✅ حفظ مرة واحدة فقط
         file.save(pdf_path)
 
-        # ✅ تحقق من الحجم
-        size = os.path.getsize(pdf_path)
-        print("FILE SIZE:", size)
-
-        if size == 0:
-            return "❌ الملف فارغ (فشل الرفع من التابلت)"
+        if os.path.getsize(pdf_path) == 0:
+            return "❌ الملف فارغ"
 
         try:
-            # 🔥 استخراج النص
             text = extract_text(pdf_path)
-
-            # 🔥 تحليل
             data = parse(text)
 
-            # 🔥 إنشاء التقرير
             output_docx = get_next_filename()
             fill_template(TEMPLATE_PATH, output_docx, data)
 
@@ -82,11 +104,18 @@ def index():
 
         except Exception as e:
             print("ERROR:", e)
-            return "❌ فشل المعالجة (راجع اللوق)"
+            return "❌ فشل المعالجة"
 
     return render_template("index.html")
 
+# 📤 تحميل الملف (محمي)
+@app.route("/download/<filename>")
+@login_required
+def download_file(filename):
+    path = os.path.join(OUTPUT_FOLDER, filename)
+    return send_file(path, as_attachment=True)
+
+# 🚀 تشغيل
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
