@@ -368,18 +368,14 @@ def parse(text):
             if any(x in desc for x in ["إخلاء", "المسؤولية", "هذا التقرير", "لا تتحمل", "أي مسؤولية", "LAUNCH", "بيانات", "service"]):
                 continue
 
-            item = {"code": code, "desc": desc.strip(), "title": current_title or ""}
-
-            # 🔥 منع التكرار
-            if code in seen_dtc:
-                continue
-
-            seen_dtc.add(code)
-
-            data["dtc"].append(item)
-
-            if current_title:
-                data["systems"].setdefault(current_title, []).append(item)
+            if full_desc:
+                key = code
+                if key in seen_dtc:
+                    i = j
+                    continue
+                seen_dtc.add(key)
+                data['dtc'].append({'system': current_title or 'غير محدد', 'code': code, 'desc': full_desc})
+                data['systems'].setdefault(current_title or 'غير محدد', []).append({'code': code, 'desc': full_desc})
         if in_ok_section:
             if re.search(r'إ.?خل.?اء|مسؤ.?ول|تقرير|بيانات', line):
                 break
