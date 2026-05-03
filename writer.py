@@ -216,7 +216,7 @@ def fill_system_tables(doc, faults_raw):
             title_to_use = current_title or 'غير محدد'
 
             row[0].text = title_to_use if part == parts[0] else ""
-            code_raw = re.search(r'([PCBU]\d{4}|\d{4}[PCBU])', m.group(0)).group(1)
+            code_raw = m.group(0).split('.')[-1]
             print("RAW:", code_raw)           # 👈 هنا
 
             code_fixed = fix_dtc(code_raw)
