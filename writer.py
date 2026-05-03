@@ -217,6 +217,11 @@ def fill_system_tables(doc, faults_raw):
 
             row[0].text = title_to_use if part == parts[0] else ""
             code_raw = m.group(0).split('.')[-1]
+            print("RAW:", code_raw)           # 👈 هنا
+
+            code_fixed = fix_dtc(code_raw)
+
+            print("FIX:", code_fixed)         #
             row[1].text = fix_dtc(code_raw)
 
             desc = part[m.end():].strip()

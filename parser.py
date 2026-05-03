@@ -98,8 +98,9 @@ def fix_dtc(code):
 
     # 🔄 لو مقلوب: 0031P
     if re.match(r'^\d{4}[PCBU]$', code):
-        code = code[-1] + code[:-1]
-
+        digits = code[:4][::-1]   # 🔥 اعكس الأرقام
+        letter = code[-1]
+        return letter + digits
     # 🎯 استخرج كود صحيح فقط
     m = re.search(r'([PCBU]\d{4})', code)
     if m:
