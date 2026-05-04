@@ -11,12 +11,19 @@ from datetime import timedelta
 
 # 🔐 إعداد التطبيق
 app = Flask(__name__, static_folder='static')
-app.permanent_session_lifetime = timedelta(days=1)
+app.permanent_session_lifetime = timedelta(hours=1)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this")
 
 # 🔐 بيانات الدخول من Render
 USERNAME = os.environ.get("APP_USERNAME")
 PASSWORD_HASH = os.environ.get("APP_PASSWORD_HASH")
+
+UPLOAD_FOLDER = "uploads"
+OUTPUT_FOLDER = "outputs"
+TEMPLATE_PATH = "template.docx"
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # 🔐 التحقق
 def check_auth(u, p):
@@ -55,13 +62,20 @@ def logout():
     session.clear()
     return redirect("/login")
 
-# 📁 إعداد الملفات
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
-TEMPLATE_PATH = "template.docx"
+@app.route("/upload", methods=["POST"])
+def upload():
+    file = request.files.get("file")
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    if not file:
+        return {"error": "no file"}, 400
+
+    filename = secure_filename(file.filename)
+
+    path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(path)
+
+    return {"status": "ok", "file": filename}
+# 📁 إعداد الملفات
 
 # 🔢 إنشاء اسم ملف
 def get_next_filename(base_name="report", ext=".docx"):
