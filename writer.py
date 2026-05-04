@@ -229,7 +229,6 @@ def fill_system_tables(doc, faults_raw):
             if not m:
                 continue
 
-            row = table.add_row().cells
             title_to_use = current_title or 'غير محدد'
 
             row[0].text = title_to_use if part == parts[0] else ""
@@ -244,7 +243,7 @@ def fill_system_tables(doc, faults_raw):
 
             seen_codes.add(key)
             row = table.add_row().cells
-            
+
             row[1].text = code_fixed
             for p in row[1].paragraphs:
                 for run in p.runs:
