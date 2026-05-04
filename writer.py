@@ -229,11 +229,18 @@ def fill_system_tables(doc, faults_raw):
             if not m:
                 continue
 
-            title_to_use = current_title or 'غير محدد'
-
-            row[0].text = title_to_use if part == parts[0] else ""
             code_raw = m.group(0).split('.')[-1]
             code_fixed = fix_dtc(code_raw)
+
+            # 🔥 إذا أول part اطبع العنوان مباشرة
+            if part == parts[0]:
+                row = table.add_row().cells
+                row[0].text = title_to_use
+                row[1].text = ""
+                row[2].text = ""
+
+                style_cell(row[0], bold=True, color=RGBColor(0, 70, 160))
+                center_cell(row[0])
 
             # 🔥 منع التكرار
             key = code_fixed
@@ -242,8 +249,10 @@ def fill_system_tables(doc, faults_raw):
                 continue
 
             seen_codes.add(key)
-            row = table.add_row().cells
 
+            # ✅ الآن صف الكود
+            row = table.add_row().cells
+            row[0].text = ""
             row[1].text = code_fixed
             for p in row[1].paragraphs:
                 for run in p.runs:
