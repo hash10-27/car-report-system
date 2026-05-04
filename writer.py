@@ -243,7 +243,8 @@ def fill_system_tables(doc, faults_raw):
                 continue
 
             seen_codes.add(key)
-
+            row = table.add_row().cells
+            
             row[1].text = code_fixed
             for p in row[1].paragraphs:
                 for run in p.runs:
