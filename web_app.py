@@ -8,6 +8,7 @@ from extractor import extract_text
 from parser import parse
 from writer import fill_template
 from datetime import timedelta
+from flask import Flask, request, jsonify
 
 # 🔐 إعداد التطبيق
 app = Flask(__name__, static_folder='static')
@@ -56,25 +57,42 @@ def login():
 
     return render_template("login.html", error=error)
 
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json()
+
+    username = data.get("email")   # نفس اسم الحقل في التطبيق
+    password = data.get("password")
+
+    if check_auth(username, password):
+        return jsonify({"token": "valid-user"})
+    else:
+        return jsonify({"error": "invalid credentials"}), 401
+
 # 🚪 تسجيل الخروج
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
-@app.route("/upload", methods=["POST"])
-def upload():
+@app.route("/api/upload", methods=["POST"])
+def api_upload():
+
+    auth = request.headers.get("Authorization")
+
+    if not auth or "valid-user" not in auth:
+        return {"error": "unauthorized"}, 401
+
     file = request.files.get("file")
 
     if not file:
         return {"error": "no file"}, 400
 
     filename = secure_filename(file.filename)
-
     path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(path)
 
-    return {"status": "ok", "file": filename}
+    return {"status": "uploaded", "file": filename}
 # 📁 إعداد الملفات
 
 # 🔢 إنشاء اسم ملف
