@@ -89,10 +89,34 @@ def api_upload():
         return {"error": "no file"}, 400
 
     filename = secure_filename(file.filename)
-    path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(path)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(pdf_path)
 
-    return {"status": "uploaded", "file": filename}
+    if os.path.getsize(pdf_path) == 0:
+        return {"error": "empty file"}, 400
+
+    try:
+        # 🔥 نفس المعالجة
+        text = extract_text(pdf_path)
+        data = parse(text)
+
+        output_docx = get_next_filename()
+        fill_template(TEMPLATE_PATH, output_docx, data)
+
+        # 👇 اسم الملف الناتج
+        out_name = os.path.basename(output_docx)
+
+        # 👇 رابط التحميل
+        file_url = f"https://car-report-sanaa.onrender.com/download/{out_name}"
+
+        return {
+            "status": "done",
+            "file": file_url
+        }
+
+    except Exception as e:
+        print("ERROR:", e)
+        return {"error": "processing failed"}, 500
 # 📁 إعداد الملفات
 
 # 🔢 إنشاء اسم ملف
