@@ -112,7 +112,10 @@ def api_upload():
         print("ERROR:", e)
         return {"error": "processing failed"}, 500
 # 📁 إعداد الملفات
-
+@app.route("/api/download/<filename>")
+def api_download(filename):
+    path = os.path.join(OUTPUT_FOLDER, filename)
+    return send_file(path, as_attachment=True)
 # 🔢 إنشاء اسم ملف
 def get_next_filename(base_name="report", ext=".docx"):
     i = 1
