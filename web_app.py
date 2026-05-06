@@ -27,6 +27,28 @@ TEMPLATE_PATH = "template.docx"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+import os
+import subprocess
+
+def convert_docx_to_pdf(docx_path):
+    filename = os.path.basename(docx_path)
+    pdf_name = filename.replace(".docx", ".pdf")
+    pdf_path = os.path.join(OUTPUT_FOLDER, pdf_name)
+
+    subprocess.run([
+        "libreoffice",
+        "--headless",
+        "--convert-to", "pdf",
+        "--outdir", OUTPUT_FOLDER,
+        docx_path
+    ], check=True)
+
+    # تأكد أن الملف انشأ فعلاً
+    if not os.path.exists(pdf_path):
+        raise Exception("PDF conversion failed")
+
+    return pdf_path
+
 # 🔐 التحقق
 def check_auth(u, p):
     return u == USERNAME and check_password_hash(PASSWORD_HASH, p)
@@ -77,20 +99,20 @@ def logout():
     return redirect("/login")
 
 
-@app.route("/api/upload", methods=["POST"])
+@app.route('/api/upload', methods=['POST'])
 def api_upload():
+    auth = request.headers.get('Authorization', '')
+    if 'valid-user' not in auth:
+        return jsonify({'error': 'unauthorized'}), 401
 
-    auth = request.headers.get("Authorization")
-
-    if not auth or "valid-user" not in auth:
-        return {"error": "unauthorized"}, 401
-
-    file = request.files.get("file")
-
+    file = request.files.get('file')
     if not file:
-        return {"error": "no file"}, 400
+        return jsonify({'error': 'no file'}), 400
 
     filename = secure_filename(file.filename)
+    if not filename.lower().endswith('.pdf'):
+        return jsonify({'error': 'pdf only'}), 400
+
     pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
@@ -101,16 +123,17 @@ def api_upload():
         output_docx = get_next_filename()
         fill_template(TEMPLATE_PATH, output_docx, data)
 
-        # 🔥 يرجّع الملف مباشرة
+        output_pdf = convert_docx_to_pdf(output_docx)
+
         return send_file(
-            output_docx,
+            output_pdf,
             as_attachment=True,
-            download_name="report.docx"
+            download_name='report.pdf'
         )
 
     except Exception as e:
-        print("ERROR:", e)
-        return {"error": "processing failed"}, 500
+        print('ERROR:', e)
+        return jsonify({'error': 'processing failed'}), 500
 # 📁 إعداد الملفات
 @app.route("/api/download/<filename>")
 def api_download(filename):
